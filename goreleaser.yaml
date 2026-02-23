@@ -58,7 +58,7 @@ nfpms:
 publishers:
   - name: cloudsmith-ubuntu-jammy
     cmd: |
-      cloudsmith push deb {{ .Env.CLOUDSMITH_REPO }}/ubuntu/jammy {{ .ArtifactPath }}
+      cloudsmith push deb --republish {{ .Env.CLOUDSMITH_REPO }}/ubuntu/jammy {{ .ArtifactPath }}
     env:
       - CLOUDSMITH_API_KEY={{ .Env.CLOUDSMITH_API_KEY }}
     dir: .
@@ -66,7 +66,7 @@ publishers:
       - deb
   - name: cloudsmith-ubuntu-focal
     cmd: |
-      cloudsmith push deb {{ .Env.CLOUDSMITH_REPO }}/ubuntu/focal {{ .ArtifactPath }}
+      cloudsmith push deb --republish {{ .Env.CLOUDSMITH_REPO }}/ubuntu/focal {{ .ArtifactPath }}
     env:
       - CLOUDSMITH_API_KEY={{ .Env.CLOUDSMITH_API_KEY }}
     dir: .
@@ -74,7 +74,7 @@ publishers:
       - deb
   - name: cloudsmith-debian-bookworm
     cmd: |
-      cloudsmith push deb {{ .Env.CLOUDSMITH_REPO }}/debian/bookworm {{ .ArtifactPath }}
+      cloudsmith push deb --republish {{ .Env.CLOUDSMITH_REPO }}/debian/bookworm {{ .ArtifactPath }}
     env:
       - CLOUDSMITH_API_KEY={{ .Env.CLOUDSMITH_API_KEY }}
     dir: .
@@ -82,7 +82,7 @@ publishers:
       - deb
   - name: cloudsmith-debian-bullseye
     cmd: |
-      cloudsmith push deb {{ .Env.CLOUDSMITH_REPO }}/debian/bullseye {{ .ArtifactPath }}
+      cloudsmith push deb --republish {{ .Env.CLOUDSMITH_REPO }}/debian/bullseye {{ .ArtifactPath }}
     env:
       - CLOUDSMITH_API_KEY={{ .Env.CLOUDSMITH_API_KEY }}
     dir: .
