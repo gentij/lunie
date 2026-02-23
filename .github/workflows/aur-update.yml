@@ -64,7 +64,7 @@ jobs:
           sed -i "s#^source=.*#source=(\"https://github.com/gentij/taskforge/releases/download/v${VERSION}/taskforge_linux_amd64.tar.gz\")#" PKGBUILD
           sed -i "s/^sha256sums=.*/sha256sums=('${SHA}')/" PKGBUILD
 
-          docker run --rm -v "$(pwd)":/repo archlinux:latest /bin/sh -c "pacman -Sy --noconfirm base-devel && useradd -m builder && chown -R builder:builder /repo && su builder -c 'cd /repo && makepkg --printsrcinfo > .SRCINFO'"
+          docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$(pwd)":/repo archlinux:base-devel /bin/sh -c "cd /repo && makepkg --printsrcinfo > .SRCINFO"
 
           git config user.name "taskforge-ci"
           git config user.email "ci@taskforge.dev"
