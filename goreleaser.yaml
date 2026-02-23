@@ -64,5 +64,3 @@ publishers:
     dir: .
     ids:
       - taskforge
-    filter:
-      kind: deb
