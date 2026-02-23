@@ -1,0 +1,72 @@
+name: Update AUR
+
+on:
+  workflow_run:
+    workflows: ["Release CLI"]
+    types:
+      - completed
+
+jobs:
+  update-aur:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+
+      - name: Resolve tag
+        id: tag
+        run: |
+          set -euo pipefail
+          TAG=$(git tag --points-at HEAD | head -n 1)
+          if [ -z "$TAG" ]; then
+            echo "No tag found for workflow run commit"
+            exit 1
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Download release asset
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.tag.outputs.tag }}"
+          URL="https://github.com/gentij/taskforge/releases/download/${TAG}/taskforge_linux_amd64"
+          curl -fL "$URL" -o taskforge_linux_amd64
+          echo "sha256=$(sha256sum taskforge_linux_amd64 | awk '{print $1}')" >> $GITHUB_OUTPUT
+        id: checksum
+
+      - name: Set up SSH
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          echo "${{ secrets.AUR_SSH_PRIVATE_KEY }}" > ~/.ssh/aur
+          chmod 600 ~/.ssh/aur
+          ssh-keyscan aur.archlinux.org >> ~/.ssh/known_hosts
+
+      - name: Clone AUR repo
+        run: |
+          set -euo pipefail
+          GIT_SSH_COMMAND="ssh -i ~/.ssh/aur" git clone ssh://aur@aur.archlinux.org/taskforge-bin.git aur
+
+      - name: Update PKGBUILD and .SRCINFO
+        run: |
+          set -euo pipefail
+          TAG="${{ steps.tag.outputs.tag }}"
+          VERSION="${TAG#v}"
+          SHA="${{ steps.checksum.outputs.sha256 }}"
+          cd aur
+
+          sed -i "s/^pkgver=.*/pkgver=${VERSION}/" PKGBUILD
+          sed -i "s#^source=.*#source=(\"taskforge::https://github.com/gentij/taskforge/releases/download/v${VERSION}/taskforge_linux_amd64\")#" PKGBUILD
+          sed -i "s/^sha256sums=.*/sha256sums=('${SHA}')/" PKGBUILD
+
+          docker run --rm -v "$(pwd)":/repo archlinux:latest /bin/sh -c "pacman -Sy --noconfirm base-devel && cd /repo && makepkg --printsrcinfo > .SRCINFO"
+
+          git config user.name "taskforge-ci"
+          git config user.email "ci@taskforge.dev"
+          git add PKGBUILD .SRCINFO
+          git commit -m "Release ${VERSION}" || exit 0
+          GIT_SSH_COMMAND="ssh -i ~/.ssh/aur" git push

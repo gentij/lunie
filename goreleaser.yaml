@@ -1,0 +1,68 @@
+version: 2
+
+project_name: taskforge
+
+builds:
+  - id: taskforge
+    dir: apps/cli
+    main: ./cmd/taskforge
+    binary: taskforge
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - id: taskforge
+    builds:
+      - taskforge
+    format: tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: "checksums.txt"
+
+release:
+  github:
+    owner: gentij
+    name: taskforge
+
+brews:
+  - name: taskforge
+    repository:
+      owner: gentij
+      name: homebrew-taskforge
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    homepage: https://github.com/gentij/taskforge
+    description: Taskforge CLI
+    license: MIT
+    install: |
+      bin.install "taskforge"
+
+nfpms:
+  - id: taskforge
+    package_name: taskforge
+    formats:
+      - deb
+    section: utils
+    priority: optional
+    maintainer: Taskforge <support@taskforge.dev>
+    description: Taskforge CLI
+    license: MIT
+    homepage: https://github.com/gentij/taskforge
+
+publishers:
+  - name: cloudsmith
+    cmd: |
+      cloudsmith push deb {{ .Env.CLOUDSMITH_REPO }} {{ .ArtifactPath }}
+    env:
+      - CLOUDSMITH_API_KEY={{ .Env.CLOUDSMITH_API_KEY }}
+    dir: .
+    ids:
+      - taskforge
+    filter:
+      kind: deb
