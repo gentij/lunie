@@ -78,6 +78,7 @@ func init() {
 	rootCmd.AddCommand(statusCmd)
 	rootCmd.AddCommand(logsCmd)
 	rootCmd.AddCommand(stopCmd)
+	rootCmd.AddCommand(tuiCmd)
 	rootCmd.AddCommand(authCmd)
 	rootCmd.AddCommand(workflowCmd)
 	rootCmd.AddCommand(triggerCmd)

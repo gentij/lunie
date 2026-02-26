@@ -260,6 +260,24 @@ func (c *Client) doJSON(method string, path string, body any, out any) error {
 		return err
 	}
 
+	if len(data) == 0 {
+		return fmt.Errorf("empty response body (status %d)", resp.StatusCode)
+	}
+
+	contentType := resp.Header.Get("Content-Type")
+	if contentType != "" && !strings.Contains(contentType, "application/json") {
+		snippet := string(data)
+		if len(snippet) > 200 {
+			snippet = snippet[:200] + "..."
+		}
+		return fmt.Errorf(
+			"unexpected content type %q (status %d): %s",
+			contentType,
+			resp.StatusCode,
+			snippet,
+		)
+	}
+
 	var env Envelope
 	if err := json.Unmarshal(data, &env); err != nil {
 		return err
