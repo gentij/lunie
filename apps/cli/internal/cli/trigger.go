@@ -104,7 +104,7 @@ func triggerList(cmd *cobra.Command, args []string) error {
 
 	rows := make([][]string, 0, len(result.Items))
 	for _, item := range result.Items {
-		rows = append(rows, []string{item.ID, item.Type, item.Name, output.BoolLabel(item.IsActive)})
+		rows = append(rows, []string{item.ID, item.Type, triggerNameValue(item.Name), output.BoolLabel(item.IsActive)})
 	}
 	if err := output.PrintListTable([]string{"ID", "TYPE", "NAME", "ACTIVE"}, rows); err != nil {
 		return err
@@ -225,10 +225,17 @@ func printTrigger(ctx *Context, result api.Trigger) error {
 		{"id", result.ID},
 		{"workflowId", result.WorkflowID},
 		{"type", result.Type},
-		{"name", result.Name},
+		{"name", triggerNameValue(result.Name)},
 		{"isActive", output.BoolLabel(result.IsActive)},
 		{"config", configValue},
 		{"createdAt", result.CreatedAt},
 		{"updatedAt", result.UpdatedAt},
 	})
+}
+
+func triggerNameValue(name *string) string {
+	if name == nil {
+		return ""
+	}
+	return *name
 }

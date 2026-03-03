@@ -22,7 +22,7 @@ func BuildRowsForView(view ViewID, store *data.Store, styleSet styles.StyleSet, 
 			{Title: "Status", Width: 12},
 			{Title: "Started", Width: 12},
 		}
-		rows, ids := recentRunRows(store, styleSet, now, 6)
+		rows, ids := recentRunRows(store, now, 6)
 		return fitColumns(columns, width), rows, ids
 	case ViewWorkflows:
 		columns := []table.Column{
@@ -33,7 +33,7 @@ func BuildRowsForView(view ViewID, store *data.Store, styleSet styles.StyleSet, 
 			{Title: "Last Run", Width: 12},
 			{Title: "Updated", Width: 12},
 		}
-		rows, ids := workflowRows(store, styleSet, now)
+		rows, ids := workflowRows(store, now)
 		return fitColumns(columns, width), rows, ids
 	case ViewRuns:
 		columns := []table.Column{
@@ -44,7 +44,7 @@ func BuildRowsForView(view ViewID, store *data.Store, styleSet styles.StyleSet, 
 			{Title: "Started", Width: 12},
 			{Title: "Duration", Width: 10},
 		}
-		rows, ids := runRows(store, styleSet, now)
+		rows, ids := runRows(store, now)
 		return fitColumns(columns, width), rows, ids
 	case ViewTriggers:
 		columns := []table.Column{
@@ -54,7 +54,7 @@ func BuildRowsForView(view ViewID, store *data.Store, styleSet styles.StyleSet, 
 			{Title: "Active", Width: 10},
 			{Title: "Created", Width: 12},
 		}
-		rows, ids := triggerRows(store, styleSet, now)
+		rows, ids := triggerRows(store, now)
 		return fitColumns(columns, width), rows, ids
 	case ViewEvents:
 		columns := []table.Column{
@@ -82,7 +82,7 @@ func BuildRowsForView(view ViewID, store *data.Store, styleSet styles.StyleSet, 
 			{Title: "Last Used", Width: 12},
 			{Title: "Status", Width: 10},
 		}
-		rows, ids := tokenRows(store, styleSet, now)
+		rows, ids := tokenRows(store, now)
 		return fitColumns(columns, width), rows, ids
 	default:
 		return nil, nil, nil
@@ -396,7 +396,7 @@ func contextLogsContent(view ViewID, store *data.Store, selectedID string) strin
 	return strings.Join(lines, "\n")
 }
 
-func recentRunRows(store *data.Store, styleSet styles.StyleSet, now time.Time, limit int) ([]table.Row, []string) {
+func recentRunRows(store *data.Store, now time.Time, limit int) ([]table.Row, []string) {
 	rows := []table.Row{}
 	ids := []string{}
 	for i, run := range store.Runs {
@@ -406,7 +406,7 @@ func recentRunRows(store *data.Store, styleSet styles.StyleSet, now time.Time, l
 		rows = append(rows, table.Row{
 			run.ID,
 			workflowName(store, run.WorkflowID),
-			statusBadge(styleSet, run.Status),
+			normalizeStatus(run.Status),
 			utils.RelativeTime(now, run.StartedAt),
 		})
 		ids = append(ids, run.ID)
@@ -414,16 +414,16 @@ func recentRunRows(store *data.Store, styleSet styles.StyleSet, now time.Time, l
 	return rows, ids
 }
 
-func workflowRows(store *data.Store, styleSet styles.StyleSet, now time.Time) ([]table.Row, []string) {
+func workflowRows(store *data.Store, now time.Time) ([]table.Row, []string) {
 	rows := []table.Row{}
 	ids := []string{}
 	for _, wf := range store.Workflows {
 		rows = append(rows, table.Row{
 			wf.Name,
-			activeBadge(styleSet, wf.Active),
+			activeLabel(wf.Active),
 			fmt.Sprintf("v%d", wf.LatestVersion),
 			fmt.Sprintf("%d", countTriggers(store, wf.ID)),
-			lastRunStatus(store, styleSet, wf.ID),
+			lastRunStatus(store, wf.ID),
 			utils.RelativeTime(now, wf.UpdatedAt),
 		})
 		ids = append(ids, wf.ID)
@@ -431,14 +431,14 @@ func workflowRows(store *data.Store, styleSet styles.StyleSet, now time.Time) ([
 	return rows, ids
 }
 
-func runRows(store *data.Store, styleSet styles.StyleSet, now time.Time) ([]table.Row, []string) {
+func runRows(store *data.Store, now time.Time) ([]table.Row, []string) {
 	rows := []table.Row{}
 	ids := []string{}
 	for _, run := range store.Runs {
 		rows = append(rows, table.Row{
 			run.ID,
 			workflowName(store, run.WorkflowID),
-			statusBadge(styleSet, run.Status),
+			normalizeStatus(run.Status),
 			run.TriggerType,
 			utils.RelativeTime(now, run.StartedAt),
 			formatDuration(run.Duration),
@@ -448,7 +448,7 @@ func runRows(store *data.Store, styleSet styles.StyleSet, now time.Time) ([]tabl
 	return rows, ids
 }
 
-func triggerRows(store *data.Store, styleSet styles.StyleSet, now time.Time) ([]table.Row, []string) {
+func triggerRows(store *data.Store, now time.Time) ([]table.Row, []string) {
 	rows := []table.Row{}
 	ids := []string{}
 	for _, trg := range store.Triggers {
@@ -456,7 +456,7 @@ func triggerRows(store *data.Store, styleSet styles.StyleSet, now time.Time) ([]
 			trg.Name,
 			trg.Type,
 			workflowName(store, trg.WorkflowID),
-			activeBadge(styleSet, trg.Active),
+			activeLabel(trg.Active),
 			utils.RelativeTime(now, trg.CreatedAt),
 		})
 		ids = append(ids, trg.ID)
@@ -498,7 +498,7 @@ func secretRows(store *data.Store, now time.Time) ([]table.Row, []string) {
 	return rows, ids
 }
 
-func tokenRows(store *data.Store, styleSet styles.StyleSet, now time.Time) ([]table.Row, []string) {
+func tokenRows(store *data.Store, now time.Time) ([]table.Row, []string) {
 	rows := []table.Row{}
 	ids := []string{}
 	for _, tok := range store.ApiTokens {
@@ -515,7 +515,7 @@ func tokenRows(store *data.Store, styleSet styles.StyleSet, now time.Time) ([]ta
 			strings.Join(tok.Scopes, ","),
 			utils.RelativeTime(now, tok.CreatedAt),
 			lastUsed,
-			statusBadge(styleSet, status),
+			status,
 		})
 		ids = append(ids, tok.ID)
 	}
@@ -843,11 +843,11 @@ func lastRunForWorkflow(store *data.Store, workflowID string) *data.WorkflowRun 
 	return nil
 }
 
-func lastRunStatus(store *data.Store, styleSet styles.StyleSet, workflowID string) string {
+func lastRunStatus(store *data.Store, workflowID string) string {
 	if run := lastRunForWorkflow(store, workflowID); run != nil {
-		return statusBadge(styleSet, run.Status)
+		return normalizeStatus(run.Status)
 	}
-	return statusBadge(styleSet, "QUEUED")
+	return "QUEUED"
 }
 
 func versionsForWorkflow(store *data.Store, workflowID string) []data.WorkflowVersion {
@@ -908,6 +908,14 @@ func activeLabel(active bool) string {
 		return "ACTIVE"
 	}
 	return "INACTIVE"
+}
+
+func normalizeStatus(status string) string {
+	status = strings.TrimSpace(strings.ToUpper(status))
+	if status == "" {
+		return "UNKNOWN"
+	}
+	return status
 }
 
 func formatDuration(d time.Duration) string {

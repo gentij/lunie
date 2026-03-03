@@ -195,6 +195,18 @@ func (c *Client) GetStepRun(workflowID string, runID string, stepID string) (Ste
 	return result, c.GetJSON("/workflows/"+workflowID+"/runs/"+runID+"/steps/"+stepID, &result)
 }
 
+func (c *Client) ListEvents(workflowID string, triggerID string, page int, pageSize int) (Paginated[Event], error) {
+	var result Paginated[Event]
+	path := fmt.Sprintf("/workflows/%s/triggers/%s/events?page=%d&pageSize=%d", workflowID, triggerID, page, pageSize)
+	return result, c.GetJSON(path, &result)
+}
+
+func (c *Client) GetEvent(workflowID string, triggerID string, eventID string) (Event, error) {
+	var result Event
+	path := "/workflows/" + workflowID + "/triggers/" + triggerID + "/events/" + eventID
+	return result, c.GetJSON(path, &result)
+}
+
 func (c *Client) ListSecrets(page int, pageSize int) (Paginated[Secret], error) {
 	var result Paginated[Secret]
 	path := fmt.Sprintf("/secrets?page=%d&pageSize=%d", page, pageSize)
@@ -219,6 +231,22 @@ func (c *Client) UpdateSecret(id string, patch map[string]any) (Secret, error) {
 func (c *Client) DeleteSecret(id string) (Secret, error) {
 	var result Secret
 	return result, c.DeleteJSON("/secrets/"+id, &result)
+}
+
+func (c *Client) GetHealth() (Health, error) {
+	var result Health
+	if err := c.GetJSON("/health", &result); err != nil {
+		return result, err
+	}
+	return result, nil
+}
+
+func (c *Client) WhoAmI() (WhoAmI, error) {
+	var result WhoAmI
+	if err := c.GetJSON("/auth/whoami", &result); err != nil {
+		return result, err
+	}
+	return result, nil
 }
 
 func (c *Client) doJSON(method string, path string, body any, out any) error {

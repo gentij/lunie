@@ -15,6 +15,7 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/ansi"
 	"github.com/gentij/taskforge/apps/cli/internal/api"
 	"github.com/gentij/taskforge/apps/cli/internal/config"
 	"github.com/gentij/taskforge/apps/cli/internal/tui/components"
@@ -59,12 +60,6 @@ const (
 )
 
 type pulseMsg struct{}
-
-type uiLoadDoneMsg struct{}
-
-type mockRefreshDoneMsg struct {
-	failed bool
-}
 
 type toastClearMsg struct {
 	id int
@@ -248,7 +243,7 @@ type Model struct {
 
 func NewModel(client *api.Client, serverURL string, tokenSet bool, cfg config.Config, configPath string) Model {
 	now := time.Now()
-	store := data.MockStore(now)
+	store := data.Store{}
 	keys := DefaultKeyMap()
 	helper := help.New()
 	helper.ShowAll = false
@@ -308,7 +303,7 @@ func NewModel(client *api.Client, serverURL string, tokenSet bool, cfg config.Co
 		refreshCount:       0,
 		networkProfile:     NetworkNormal,
 		workspaceName:      "personal",
-		workerCount:        2,
+		workerCount:        0,
 		apiStatus:          apiStatus(tokenSet),
 		paginator:          pager,
 		inspector:          NewInspector(styleSet, keys),
@@ -335,7 +330,7 @@ func (m Model) Init() tea.Cmd {
 		width, height := initialSize()
 		return tea.WindowSizeMsg{Width: width, Height: height}
 	}
-	return tea.Batch(windowSizeCmd, pulseTick(), initialLoadTick(m.profileDelay()))
+	return tea.Batch(windowSizeCmd, pulseTick(), fetchSnapshotCmd(m.client, m.profileDelay(), m.profileShouldFail(false)))
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -355,22 +350,31 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds := []tea.Cmd{pulseTick()}
 		if m.autoRefresh && !m.refreshPending && time.Since(m.lastRefresh) >= m.refreshEvery {
 			m.startMockRefresh(false)
-			cmds = append(cmds, mockRefreshTick(m.profileDelay(), m.profileShouldFail(false)))
+			cmds = append(cmds, fetchSnapshotCmd(m.client, m.profileDelay(), m.profileShouldFail(false)))
 		}
 		return m, tea.Batch(cmds...)
-	case uiLoadDoneMsg:
-		m.uiReady = true
-		m.refreshView()
-		m.syncSurfaceStates()
-		return m, nil
-	case mockRefreshDoneMsg:
+	case snapshotLoadedMsg:
 		m.refreshPending = false
 		m.lastRefresh = time.Now()
-		if msg.failed {
-			m.mainState = SurfaceStale
-			m.contextState = SurfaceStale
-			return m, m.pushToast(ToastWarn, "Refresh failed; showing cached data (ctrl+r retry)")
+		if msg.err != nil {
+			m.apiStatus = "OFFLINE"
+			if !m.uiReady {
+				m.uiReady = true
+				m.mainState = SurfaceError
+				m.contextState = SurfaceError
+				m.refreshView()
+			}
+			if m.mainState != SurfaceError {
+				m.mainState = SurfaceStale
+			}
+			if m.contextState != SurfaceError {
+				m.contextState = SurfaceStale
+			}
+			return m, m.pushToast(ToastWarn, "Failed to sync data (ctrl+r retry)")
 		}
+		m.store = msg.store
+		m.apiStatus = msg.apiStatus
+		m.uiReady = true
 		m.mainState = SurfaceIdle
 		m.contextState = SurfaceIdle
 		m.refreshView()
@@ -381,6 +385,19 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.toast = ToastState{}
 		}
 		return m, nil
+	case mutationResultMsg:
+		if msg.err != nil {
+			return m, m.pushToast(ToastError, "Action failed")
+		}
+		cmds := []tea.Cmd{}
+		if strings.TrimSpace(msg.successMessage) != "" {
+			cmds = append(cmds, m.pushToast(ToastSuccess, msg.successMessage))
+		}
+		if msg.refresh {
+			m.startMockRefresh(false)
+			cmds = append(cmds, fetchSnapshotCmd(m.client, m.profileDelay(), m.profileShouldFail(false)))
+		}
+		return m, tea.Batch(cmds...)
 	}
 
 	if m.searching {
@@ -624,7 +641,7 @@ func (m *Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if key.Matches(msg, m.keys.Retry) && m.canRetry() {
 		m.startMockRefresh(true)
 		clearToastCmd := m.pushToast(ToastInfo, "Retrying refresh...")
-		return m, tea.Batch(mockRefreshTick(m.profileDelay(), m.profileShouldFail(true)), clearToastCmd)
+		return m, tea.Batch(fetchSnapshotCmd(m.client, m.profileDelay(), m.profileShouldFail(true)), clearToastCmd)
 	}
 	if key.Matches(msg, m.keys.Palette) {
 		m.palette = buildPalette(m.theme, m.paletteRecent, m.paletteState())
@@ -689,16 +706,13 @@ func (m *Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 	if m.view == ViewWorkflows && key.Matches(msg, m.keys.RunWorkflow) {
-		m.queueRunForSelectedWorkflow()
-		return m, m.pushToast(ToastSuccess, "Workflow run queued")
+		return m, m.queueRunForSelectedWorkflowCmd()
 	}
 	if m.view == ViewWorkflows && key.Matches(msg, m.keys.ToggleActive) {
-		m.toggleWorkflowActive()
-		return m, m.pushToast(ToastInfo, "Workflow status updated")
+		return m, m.toggleWorkflowActiveCmd()
 	}
 	if m.view == ViewTokens && key.Matches(msg, m.keys.RevokeToken) {
-		m.toggleTokenRevoked()
-		return m, m.pushToast(ToastInfo, "Token status updated")
+		return m, m.pushToast(ToastWarn, "API tokens are not available yet")
 	}
 
 	if m.focus == FocusSidebar {
@@ -1018,8 +1032,7 @@ func (m *Model) runPaletteAction(action paletteAction) tea.Cmd {
 		return m.pushToast(ToastInfo, "Filters cleared")
 	case paletteRunWorkflow:
 		m.rememberPaletteAction(action)
-		m.queueRunForSelectedWorkflow()
-		return m.pushToast(ToastSuccess, "Workflow run queued")
+		return m.queueRunForSelectedWorkflowCmd()
 	case paletteClearRecent:
 		m.paletteRecent = nil
 		return m.pushToast(ToastInfo, "Recent commands cleared")
@@ -1038,18 +1051,6 @@ func (m *Model) runPaletteAction(action paletteAction) tea.Cmd {
 func pulseTick() tea.Cmd {
 	return tea.Tick(650*time.Millisecond, func(time.Time) tea.Msg {
 		return pulseMsg{}
-	})
-}
-
-func initialLoadTick(delay time.Duration) tea.Cmd {
-	return tea.Tick(delay, func(time.Time) tea.Msg {
-		return uiLoadDoneMsg{}
-	})
-}
-
-func mockRefreshTick(delay time.Duration, failed bool) tea.Cmd {
-	return tea.Tick(delay, func(time.Time) tea.Msg {
-		return mockRefreshDoneMsg{failed: failed}
 	})
 }
 
@@ -1281,31 +1282,51 @@ func (m *Model) prevView() {
 	}
 }
 
-func (m *Model) toggleWorkflowActive() {
+func (m *Model) toggleWorkflowActiveCmd() tea.Cmd {
 	selected := m.selectedRowID()
 	if selected == "" {
-		return
+		return m.pushToast(ToastWarn, "Select a workflow first")
 	}
-	for i, wf := range m.store.Workflows {
-		if wf.ID == selected {
-			m.store.Workflows[i].Active = !wf.Active
-			m.refreshView()
-			return
+	wf, ok := workflowByID(&m.store, selected)
+	if !ok {
+		return m.pushToast(ToastWarn, "Select a workflow first")
+	}
+	client := m.client
+	next := !wf.Active
+	return func() tea.Msg {
+		if client == nil {
+			return mutationResultMsg{err: fmt.Errorf("api client unavailable")}
 		}
+		_, err := client.UpdateWorkflow(selected, map[string]any{"isActive": next})
+		if err != nil {
+			return mutationResultMsg{err: err}
+		}
+		return mutationResultMsg{successMessage: "Workflow status updated", refresh: true}
 	}
 }
 
-func (m *Model) toggleTokenRevoked() {
+func (m *Model) queueRunForSelectedWorkflowCmd() tea.Cmd {
+	if m.view != ViewWorkflows {
+		return m.pushToast(ToastWarn, "Open Workflows to run")
+	}
 	selected := m.selectedRowID()
 	if selected == "" {
-		return
+		return m.pushToast(ToastWarn, "Select a workflow first")
 	}
-	for i, tok := range m.store.ApiTokens {
-		if tok.ID == selected {
-			m.store.ApiTokens[i].Revoked = !tok.Revoked
-			m.refreshView()
-			return
+	client := m.client
+	return func() tea.Msg {
+		if client == nil {
+			return mutationResultMsg{err: fmt.Errorf("api client unavailable")}
 		}
+		result, err := client.RunWorkflow(selected, map[string]any{}, map[string]any{})
+		if err != nil {
+			return mutationResultMsg{err: err}
+		}
+		message := "Workflow run queued"
+		if id, ok := result["workflowRunId"]; ok && strings.TrimSpace(id) != "" {
+			message = "Workflow run queued: " + id
+		}
+		return mutationResultMsg{successMessage: message, refresh: true}
 	}
 }
 
@@ -1382,28 +1403,6 @@ func (m *Model) syncSidebarSelection() {
 			return
 		}
 	}
-}
-
-func (m *Model) queueRunForSelectedWorkflow() {
-	if m.view != ViewWorkflows {
-		return
-	}
-	selected := m.selectedRowID()
-	if selected == "" {
-		return
-	}
-	newRun := data.WorkflowRun{
-		ID:          "run_" + time.Now().Format("150405"),
-		WorkflowID:  selected,
-		Status:      "QUEUED",
-		TriggerType: "manual",
-		StartedAt:   time.Now(),
-		Duration:    0,
-		InputJSON:   `{"manual":true}`,
-		OutputJSON:  `{}`,
-	}
-	m.store.Runs = append([]data.WorkflowRun{newRun}, m.store.Runs...)
-	m.refreshView()
 }
 
 func buildPalette(theme styles.Theme, recentActions []paletteAction, state paletteBuildState) list.Model {
@@ -1641,7 +1640,7 @@ func truncateRows(rows []table.Row, columns []table.Column) []table.Row {
 	}
 	for i := range rows {
 		for c := 0; c < len(rows[i]) && c < len(widths); c++ {
-			rows[i][c] = utils.Truncate(rows[i][c], widths[c])
+			rows[i][c] = ansi.Truncate(rows[i][c], widths[c], "")
 		}
 	}
 	return rows
