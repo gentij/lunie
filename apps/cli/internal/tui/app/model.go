@@ -1,6 +1,7 @@
 package app
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -54,6 +55,11 @@ const (
 	paletteToggleRefresh
 	paletteClearFilters
 	paletteRunWorkflow
+	paletteRenameWorkflow
+	paletteCreateTrigger
+	paletteRenameTrigger
+	paletteToggleTrigger
+	paletteShowCLIHandoff
 	paletteClearRecent
 	paletteSetTheme
 	paletteSetNetworkProfile
@@ -106,6 +112,7 @@ type paletteAction struct {
 	Kind    paletteActionType
 	View    ViewID
 	Profile NetworkProfile
+	Value   string
 }
 
 type ContextTab int
@@ -116,6 +123,36 @@ const (
 	ContextTabSteps
 	ContextTabLogs
 )
+
+type actionModalMode int
+
+const (
+	actionModalNone actionModalMode = iota
+	actionModalRenameWorkflow
+	actionModalRenameTrigger
+	actionModalCreateTrigger
+	actionModalConfirmDelete
+	actionModalCLIHandoff
+)
+
+type actionModalState struct {
+	Active         bool
+	Mode           actionModalMode
+	Title          string
+	Description    string
+	Validation     string
+	ShowValidation bool
+	Primary        textinput.Model
+	Secondary      textinput.Model
+	Confirm        textinput.Model
+	Focus          int
+	WorkflowID     string
+	TriggerID      string
+	TriggerType    string
+	TriggerActive  bool
+	ConfirmPhrase  string
+	CLICommand     string
+}
 
 type paletteItem struct {
 	Label          string
@@ -216,18 +253,20 @@ type Model struct {
 	showHelp bool
 	help     help.Model
 	keys     KeyMap
+	action   actionModalState
 
-	autoRefresh    bool
-	refreshEvery   time.Duration
-	lastRefresh    time.Time
-	pulseOn        bool
-	refreshPending bool
-	refreshCount   int
-	networkProfile NetworkProfile
-	workspaceName  string
-	workerCount    int
-	apiStatus      string
-	paletteRecent  []paletteAction
+	autoRefresh     bool
+	refreshEvery    time.Duration
+	lastRefresh     time.Time
+	pulseOn         bool
+	refreshPending  bool
+	refreshCount    int
+	mutationPending bool
+	networkProfile  NetworkProfile
+	workspaceName   string
+	workerCount     int
+	apiStatus       string
+	paletteRecent   []paletteAction
 
 	mainState    SurfaceState
 	contextState SurfaceState
@@ -296,11 +335,13 @@ func NewModel(client *api.Client, serverURL string, tokenSet bool, cfg config.Co
 		mainPanel:          mainPanel,
 		help:               helper,
 		keys:               keys,
+		action:             actionModalState{},
 		refreshEvery:       2 * time.Second,
 		lastRefresh:        now,
 		pulseOn:            false,
 		refreshPending:     false,
 		refreshCount:       0,
+		mutationPending:    false,
 		networkProfile:     NetworkNormal,
 		workspaceName:      "personal",
 		workerCount:        0,
@@ -386,8 +427,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		return m, nil
 	case mutationResultMsg:
+		m.mutationPending = false
 		if msg.err != nil {
-			return m, m.pushToast(ToastError, "Action failed")
+			return m, m.pushToast(ToastError, mutationErrorMessage(msg.err))
 		}
 		cmds := []tea.Cmd{}
 		if strings.TrimSpace(msg.successMessage) != "" {
@@ -463,6 +505,8 @@ func (m *Model) resize(width int, height int) {
 }
 
 func (m *Model) refreshView() {
+	selectedID := m.selectedRowID()
+	cursor := m.table.Cursor()
 	columns, rows, rowIDs := BuildRowsForView(m.view, &m.store, m.styles, max(m.layout.MainWidth-2, 1))
 	cfg, ok := m.sortByView[m.view]
 	if !ok || cfg.Column < 0 || cfg.Column >= len(columns) {
@@ -475,16 +519,45 @@ func (m *Model) refreshView() {
 	m.columns = columns
 	m.baseRows = rows
 	m.baseRowIDs = rowIDs
-	m.applyFilter()
+	m.applyFilterWithSelection(selectedID, cursor)
 	m.syncSidebarSelection()
 }
 
 func (m *Model) applyFilter() {
+	selectedID := m.selectedRowID()
+	cursor := m.table.Cursor()
+	m.applyFilterWithSelection(selectedID, cursor)
+}
+
+func (m *Model) applyFilterWithSelection(selectedID string, cursor int) {
 	rows, rowIDs := filterRows(m.baseRows, m.baseRowIDs, m.searchQuery)
 	m.filteredRows = rows
 	m.filteredRowIDs = rowIDs
+	m.restoreSelection(selectedID, cursor)
 	m.syncSurfaceStates()
 	m.applyTableRows()
+}
+
+func (m *Model) restoreSelection(selectedID string, cursor int) {
+	if len(m.filteredRowIDs) == 0 {
+		m.table.SetCursor(0)
+		return
+	}
+	if selectedID != "" {
+		for i, id := range m.filteredRowIDs {
+			if id == selectedID {
+				m.table.SetCursor(i)
+				return
+			}
+		}
+	}
+	if cursor < 0 {
+		cursor = 0
+	}
+	if cursor >= len(m.filteredRowIDs) {
+		cursor = len(m.filteredRowIDs) - 1
+	}
+	m.table.SetCursor(cursor)
 }
 
 func (m *Model) applyTableRows() {
@@ -612,6 +685,9 @@ func (m *Model) selectedRowID() string {
 }
 
 func (m *Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	if m.action.Active {
+		return m.updateActionModal(msg)
+	}
 	if m.showHelp {
 		if key.Matches(msg, m.keys.Help) || key.Matches(msg, m.keys.Back) {
 			m.showHelp = false
@@ -710,6 +786,18 @@ func (m *Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 	if m.view == ViewWorkflows && key.Matches(msg, m.keys.ToggleActive) {
 		return m, m.toggleWorkflowActiveCmd()
+	}
+	if m.view == ViewWorkflows && key.Matches(msg, m.keys.Rename) {
+		return m, m.openRenameWorkflowModalCmd()
+	}
+	if (m.view == ViewWorkflows || m.view == ViewTriggers) && key.Matches(msg, m.keys.CreateTrigger) {
+		return m, m.openCreateTriggerModalCmd()
+	}
+	if m.view == ViewTriggers && key.Matches(msg, m.keys.Rename) {
+		return m, m.openRenameTriggerModalCmd()
+	}
+	if m.view == ViewTriggers && key.Matches(msg, m.keys.ToggleActive) {
+		return m, m.toggleTriggerActiveCmd()
 	}
 	if m.view == ViewTokens && key.Matches(msg, m.keys.RevokeToken) {
 		return m, m.pushToast(ToastWarn, "API tokens are not available yet")
@@ -1033,6 +1121,21 @@ func (m *Model) runPaletteAction(action paletteAction) tea.Cmd {
 	case paletteRunWorkflow:
 		m.rememberPaletteAction(action)
 		return m.queueRunForSelectedWorkflowCmd()
+	case paletteRenameWorkflow:
+		m.rememberPaletteAction(action)
+		return m.openRenameWorkflowModalCmd()
+	case paletteCreateTrigger:
+		m.rememberPaletteAction(action)
+		return m.openCreateTriggerModalCmd()
+	case paletteRenameTrigger:
+		m.rememberPaletteAction(action)
+		return m.openRenameTriggerModalCmd()
+	case paletteToggleTrigger:
+		m.rememberPaletteAction(action)
+		return m.toggleTriggerActiveCmd()
+	case paletteShowCLIHandoff:
+		m.rememberPaletteAction(action)
+		return m.openCLIHandoffModalCmd(action.Value)
 	case paletteClearRecent:
 		m.paletteRecent = nil
 		return m.pushToast(ToastInfo, "Recent commands cleared")
@@ -1166,6 +1269,27 @@ func (m *Model) canRetry() bool {
 	return m.mainState == SurfaceError || m.mainState == SurfaceStale || m.contextState == SurfaceError || m.contextState == SurfaceStale
 }
 
+func mutationErrorMessage(err error) string {
+	if err == nil {
+		return "Action failed"
+	}
+	if apiErr := api.AsAPIError(err); apiErr != nil {
+		code := strings.TrimSpace(apiErr.Code)
+		msg := strings.TrimSpace(apiErr.Message)
+		if code != "" && msg != "" {
+			return code + ": " + msg
+		}
+		if msg != "" {
+			return msg
+		}
+	}
+	msg := strings.TrimSpace(err.Error())
+	if msg == "" {
+		return "Action failed"
+	}
+	return msg
+}
+
 func (m *Model) rememberPaletteAction(action paletteAction) {
 	if action.Kind == paletteNoop {
 		return
@@ -1185,7 +1309,7 @@ func (m *Model) rememberPaletteAction(action paletteAction) {
 }
 
 func paletteActionKey(action paletteAction) string {
-	return fmt.Sprintf("%d:%s:%d", action.Kind, action.View, action.Profile)
+	return fmt.Sprintf("%d:%s:%d:%s", action.Kind, action.View, action.Profile, action.Value)
 }
 
 func paletteItemFromAction(action paletteAction, state paletteBuildState) paletteItem {
@@ -1214,6 +1338,43 @@ func paletteItemFromAction(action paletteAction, state paletteBuildState) palett
 			item.Enabled = false
 			item.Detail = "Unavailable: select workflow row"
 			item.DisabledReason = "Select a workflow row in Workflows first"
+		}
+	case paletteRenameWorkflow:
+		item.Label = "Action: Rename selected workflow"
+		if !(state.View == ViewWorkflows && state.HasSelection) {
+			item.Enabled = false
+			item.Detail = "Unavailable: select workflow row"
+			item.DisabledReason = "Select a workflow row in Workflows first"
+		}
+	case paletteCreateTrigger:
+		item.Label = "Action: Create trigger"
+		if !((state.View == ViewWorkflows || state.View == ViewTriggers) && state.HasSelection) {
+			item.Enabled = false
+			item.Detail = "Unavailable: select workflow or trigger row"
+			item.DisabledReason = "Select a row in Workflows or Triggers first"
+		}
+	case paletteRenameTrigger:
+		item.Label = "Action: Rename selected trigger"
+		if !(state.View == ViewTriggers && state.HasSelection) {
+			item.Enabled = false
+			item.Detail = "Unavailable: select trigger row"
+			item.DisabledReason = "Select a trigger row in Triggers first"
+		}
+	case paletteToggleTrigger:
+		item.Label = "Action: Toggle selected trigger"
+		if !(state.View == ViewTriggers && state.HasSelection) {
+			item.Enabled = false
+			item.Detail = "Unavailable: select trigger row"
+			item.DisabledReason = "Select a trigger row in Triggers first"
+		}
+	case paletteShowCLIHandoff:
+		switch action.Value {
+		case "workflow-create":
+			item.Label = "CLI: Create workflow"
+		case "workflow-version-create":
+			item.Label = "CLI: Create workflow version"
+		default:
+			item.Label = "CLI: Open authoring command"
 		}
 	case paletteClearFilters:
 		item.Label = "Action: Clear filters"
@@ -1283,6 +1444,9 @@ func (m *Model) prevView() {
 }
 
 func (m *Model) toggleWorkflowActiveCmd() tea.Cmd {
+	if m.mutationPending {
+		return m.pushToast(ToastWarn, "Another action is still in progress")
+	}
 	selected := m.selectedRowID()
 	if selected == "" {
 		return m.pushToast(ToastWarn, "Select a workflow first")
@@ -1293,6 +1457,7 @@ func (m *Model) toggleWorkflowActiveCmd() tea.Cmd {
 	}
 	client := m.client
 	next := !wf.Active
+	m.mutationPending = true
 	return func() tea.Msg {
 		if client == nil {
 			return mutationResultMsg{err: fmt.Errorf("api client unavailable")}
@@ -1306,6 +1471,9 @@ func (m *Model) toggleWorkflowActiveCmd() tea.Cmd {
 }
 
 func (m *Model) queueRunForSelectedWorkflowCmd() tea.Cmd {
+	if m.mutationPending {
+		return m.pushToast(ToastWarn, "Another action is still in progress")
+	}
 	if m.view != ViewWorkflows {
 		return m.pushToast(ToastWarn, "Open Workflows to run")
 	}
@@ -1314,6 +1482,7 @@ func (m *Model) queueRunForSelectedWorkflowCmd() tea.Cmd {
 		return m.pushToast(ToastWarn, "Select a workflow first")
 	}
 	client := m.client
+	m.mutationPending = true
 	return func() tea.Msg {
 		if client == nil {
 			return mutationResultMsg{err: fmt.Errorf("api client unavailable")}
@@ -1328,6 +1497,573 @@ func (m *Model) queueRunForSelectedWorkflowCmd() tea.Cmd {
 		}
 		return mutationResultMsg{successMessage: message, refresh: true}
 	}
+}
+
+func (m *Model) toggleTriggerActiveCmd() tea.Cmd {
+	if m.mutationPending {
+		return m.pushToast(ToastWarn, "Another action is still in progress")
+	}
+	if m.view != ViewTriggers {
+		return m.pushToast(ToastWarn, "Open Triggers to toggle")
+	}
+	selected := m.selectedRowID()
+	if selected == "" {
+		return m.pushToast(ToastWarn, "Select a trigger first")
+	}
+	trg, ok := triggerByID(&m.store, selected)
+	if !ok {
+		return m.pushToast(ToastWarn, "Select a trigger first")
+	}
+	client := m.client
+	next := !trg.Active
+	m.mutationPending = true
+	return func() tea.Msg {
+		if client == nil {
+			return mutationResultMsg{err: fmt.Errorf("api client unavailable")}
+		}
+		_, err := client.UpdateTrigger(trg.WorkflowID, trg.ID, map[string]any{"isActive": next})
+		if err != nil {
+			return mutationResultMsg{err: err}
+		}
+		return mutationResultMsg{successMessage: "Trigger status updated", refresh: true}
+	}
+}
+
+func (m *Model) renameWorkflowCmd(workflowID string, name string) tea.Cmd {
+	if m.mutationPending {
+		return m.pushToast(ToastWarn, "Another action is still in progress")
+	}
+	name = strings.TrimSpace(name)
+	if workflowID == "" {
+		return m.pushToast(ToastWarn, "Select a workflow first")
+	}
+	if name == "" {
+		return m.pushToast(ToastWarn, "Workflow name cannot be empty")
+	}
+	client := m.client
+	m.mutationPending = true
+	return func() tea.Msg {
+		if client == nil {
+			return mutationResultMsg{err: fmt.Errorf("api client unavailable")}
+		}
+		_, err := client.UpdateWorkflow(workflowID, map[string]any{"name": name})
+		if err != nil {
+			return mutationResultMsg{err: err}
+		}
+		return mutationResultMsg{successMessage: "Workflow renamed", refresh: true}
+	}
+}
+
+func (m *Model) renameTriggerCmd(workflowID string, triggerID string, name string) tea.Cmd {
+	if m.mutationPending {
+		return m.pushToast(ToastWarn, "Another action is still in progress")
+	}
+	name = strings.TrimSpace(name)
+	if workflowID == "" || triggerID == "" {
+		return m.pushToast(ToastWarn, "Select a trigger first")
+	}
+	if name == "" {
+		return m.pushToast(ToastWarn, "Trigger name cannot be empty")
+	}
+	client := m.client
+	m.mutationPending = true
+	return func() tea.Msg {
+		if client == nil {
+			return mutationResultMsg{err: fmt.Errorf("api client unavailable")}
+		}
+		_, err := client.UpdateTrigger(workflowID, triggerID, map[string]any{"name": name})
+		if err != nil {
+			return mutationResultMsg{err: err}
+		}
+		return mutationResultMsg{successMessage: "Trigger renamed", refresh: true}
+	}
+}
+
+func (m *Model) createTriggerCmd(workflowID string, triggerType string, name string, active bool, configRaw string) tea.Cmd {
+	if m.mutationPending {
+		return m.pushToast(ToastWarn, "Another action is still in progress")
+	}
+	workflowID = strings.TrimSpace(workflowID)
+	name = strings.TrimSpace(name)
+	if workflowID == "" {
+		return m.pushToast(ToastWarn, "Select a workflow first")
+	}
+	if name == "" {
+		return m.pushToast(ToastWarn, "Trigger name cannot be empty")
+	}
+	if strings.TrimSpace(configRaw) == "" {
+		configRaw = "{}"
+	}
+	configValue, err := parseJSONObject(configRaw)
+	if err != nil {
+		return m.pushToast(ToastWarn, "Trigger config must be a valid JSON object")
+	}
+	client := m.client
+	m.mutationPending = true
+	triggerType = strings.ToUpper(strings.TrimSpace(triggerType))
+	return func() tea.Msg {
+		if client == nil {
+			return mutationResultMsg{err: fmt.Errorf("api client unavailable")}
+		}
+		payload := map[string]any{
+			"type":     triggerType,
+			"name":     name,
+			"isActive": active,
+			"config":   configValue,
+		}
+		_, err := client.CreateTrigger(workflowID, payload)
+		if err != nil {
+			return mutationResultMsg{err: err}
+		}
+		return mutationResultMsg{successMessage: "Trigger created", refresh: true}
+	}
+}
+
+func (m *Model) openRenameWorkflowModalCmd() tea.Cmd {
+	if m.mutationPending {
+		return m.pushToast(ToastWarn, "Another action is still in progress")
+	}
+	if m.view != ViewWorkflows {
+		return m.pushToast(ToastWarn, "Open Workflows to rename")
+	}
+	selected := m.selectedRowID()
+	wf, ok := workflowByID(&m.store, selected)
+	if !ok {
+		return m.pushToast(ToastWarn, "Select a workflow first")
+	}
+	input := newActionInput("name> ", "Workflow name", wf.Name, 120)
+	m.action = actionModalState{
+		Active:      true,
+		Mode:        actionModalRenameWorkflow,
+		Title:       "Rename Workflow",
+		Description: "Update selected workflow name",
+		Primary:     input,
+		Focus:       0,
+		WorkflowID:  wf.ID,
+	}
+	m.syncActionModalFocus()
+	return nil
+}
+
+func (m *Model) openRenameTriggerModalCmd() tea.Cmd {
+	if m.mutationPending {
+		return m.pushToast(ToastWarn, "Another action is still in progress")
+	}
+	if m.view != ViewTriggers {
+		return m.pushToast(ToastWarn, "Open Triggers to rename")
+	}
+	selected := m.selectedRowID()
+	trg, ok := triggerByID(&m.store, selected)
+	if !ok {
+		return m.pushToast(ToastWarn, "Select a trigger first")
+	}
+	input := newActionInput("name> ", "Trigger name", trg.Name, 120)
+	m.action = actionModalState{
+		Active:      true,
+		Mode:        actionModalRenameTrigger,
+		Title:       "Rename Trigger",
+		Description: "Update selected trigger name",
+		Primary:     input,
+		Focus:       0,
+		WorkflowID:  trg.WorkflowID,
+		TriggerID:   trg.ID,
+	}
+	m.syncActionModalFocus()
+	return nil
+}
+
+func (m *Model) openCreateTriggerModalCmd() tea.Cmd {
+	if m.mutationPending {
+		return m.pushToast(ToastWarn, "Another action is still in progress")
+	}
+	workflowID := m.selectedWorkflowIDForTriggerMutation()
+	if workflowID == "" {
+		return m.pushToast(ToastWarn, "Select a workflow in Workflows, or a trigger row in Triggers")
+	}
+	nameInput := newActionInput("name> ", "Trigger name", "", 120)
+	configInput := newActionInput("config> ", "JSON object", "{}", 2000)
+	m.action = actionModalState{
+		Active:        true,
+		Mode:          actionModalCreateTrigger,
+		Title:         "Create Trigger",
+		Description:   "Create a trigger for selected workflow",
+		Primary:       nameInput,
+		Secondary:     configInput,
+		Focus:         1,
+		WorkflowID:    workflowID,
+		TriggerType:   "MANUAL",
+		TriggerActive: true,
+	}
+	m.syncActionModalFocus()
+	return nil
+}
+
+func (m *Model) openCLIHandoffModalCmd(topic string) tea.Cmd {
+	description := "Use the CLI for definition authoring"
+	command := ""
+	title := "CLI Handoff"
+	selectedWorkflow := m.selectedWorkflowIDForTriggerMutation()
+	if selectedWorkflow == "" && m.view == ViewWorkflows {
+		selectedWorkflow = m.selectedRowID()
+	}
+	workflowTarget := "<workflow-id>"
+	if strings.TrimSpace(selectedWorkflow) != "" {
+		workflowTarget = selectedWorkflow
+	}
+	switch strings.TrimSpace(topic) {
+	case "workflow-version-create":
+		title = "Create Workflow Version"
+		description = "Workflow versions stay CLI-first for JSON authoring and validation"
+		command = "taskforge workflow version create " + workflowTarget + " --definition ./workflow-definition.json"
+	default:
+		title = "Create Workflow"
+		description = "Workflow creation stays CLI-first for JSON authoring and validation"
+		command = "taskforge workflow create --name \"my-workflow\" --definition ./workflow-definition.json"
+	}
+	m.action = actionModalState{
+		Active:      true,
+		Mode:        actionModalCLIHandoff,
+		Title:       title,
+		Description: description,
+		CLICommand:  command,
+	}
+	return nil
+}
+
+func newActionInput(prompt string, placeholder string, value string, limit int) textinput.Model {
+	input := textinput.New()
+	input.Prompt = prompt
+	input.Placeholder = placeholder
+	input.CharLimit = limit
+	input.SetValue(value)
+	input.CursorEnd()
+	return input
+}
+
+func parseJSONObject(raw string) (map[string]any, error) {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" {
+		trimmed = "{}"
+	}
+	var parsed any
+	if err := json.Unmarshal([]byte(trimmed), &parsed); err != nil {
+		return nil, err
+	}
+	obj, ok := parsed.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("not an object")
+	}
+	return obj, nil
+}
+
+func (m *Model) refreshActionValidation() {
+	if !m.action.ShowValidation {
+		return
+	}
+	errMessage := m.actionModalValidationError()
+	m.action.Validation = errMessage
+	if errMessage == "" {
+		m.action.ShowValidation = false
+	}
+}
+
+func (m *Model) actionModalValidationError() string {
+	switch m.action.Mode {
+	case actionModalRenameWorkflow:
+		if strings.TrimSpace(m.action.WorkflowID) == "" {
+			return "Select a workflow first"
+		}
+		if strings.TrimSpace(m.action.Primary.Value()) == "" {
+			return "Workflow name cannot be empty"
+		}
+	case actionModalRenameTrigger:
+		if strings.TrimSpace(m.action.WorkflowID) == "" || strings.TrimSpace(m.action.TriggerID) == "" {
+			return "Select a trigger first"
+		}
+		if strings.TrimSpace(m.action.Primary.Value()) == "" {
+			return "Trigger name cannot be empty"
+		}
+	case actionModalCreateTrigger:
+		if strings.TrimSpace(m.action.WorkflowID) == "" {
+			return "Select a workflow first"
+		}
+		if strings.TrimSpace(m.action.Primary.Value()) == "" {
+			return "Trigger name cannot be empty"
+		}
+		if !isAllowedTriggerType(m.action.TriggerType) {
+			return "Trigger type must be MANUAL, CRON, or WEBHOOK"
+		}
+		if _, err := parseJSONObject(m.action.Secondary.Value()); err != nil {
+			return "Trigger config must be a valid JSON object"
+		}
+	case actionModalConfirmDelete:
+		if strings.TrimSpace(m.action.ConfirmPhrase) == "" {
+			return "Confirmation phrase is required"
+		}
+		if strings.TrimSpace(m.action.Confirm.Value()) != strings.TrimSpace(m.action.ConfirmPhrase) {
+			return "Type the exact confirmation phrase"
+		}
+	}
+	return ""
+}
+
+func isAllowedTriggerType(value string) bool {
+	switch strings.ToUpper(strings.TrimSpace(value)) {
+	case "MANUAL", "CRON", "WEBHOOK":
+		return true
+	default:
+		return false
+	}
+}
+
+func (m *Model) openDeleteConfirmModal(title string, description string, phrase string) {
+	confirmInput := newActionInput("confirm> ", "Type: "+phrase, "", 80)
+	m.action = actionModalState{
+		Active:        true,
+		Mode:          actionModalConfirmDelete,
+		Title:         title,
+		Description:   description,
+		Confirm:       confirmInput,
+		Focus:         0,
+		ConfirmPhrase: phrase,
+	}
+	m.syncActionModalFocus()
+}
+
+func (m *Model) selectedWorkflowIDForTriggerMutation() string {
+	selected := m.selectedRowID()
+	if selected == "" {
+		return ""
+	}
+	if m.view == ViewWorkflows {
+		if _, ok := workflowByID(&m.store, selected); ok {
+			return selected
+		}
+		return ""
+	}
+	if m.view == ViewTriggers {
+		if trg, ok := triggerByID(&m.store, selected); ok {
+			return trg.WorkflowID
+		}
+	}
+	return ""
+}
+
+func (m *Model) updateActionModal(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if !m.action.Active {
+		return m, nil
+	}
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		if key.Matches(keyMsg, m.keys.Back) || key.Matches(keyMsg, m.keys.Quit) {
+			m.action = actionModalState{}
+			return m, nil
+		}
+		if m.action.Mode == actionModalCLIHandoff {
+			if key.Matches(keyMsg, m.keys.Enter) {
+				m.action = actionModalState{}
+			}
+			return m, nil
+		}
+		if key.Matches(keyMsg, m.keys.Enter) {
+			if errMessage := m.actionModalValidationError(); errMessage != "" {
+				m.action.Validation = errMessage
+				m.action.ShowValidation = true
+				return m, nil
+			}
+			m.action.Validation = ""
+			m.action.ShowValidation = false
+			return m, m.submitActionModal()
+		}
+		if key.Matches(keyMsg, m.keys.NextScreen) {
+			m.cycleActionModalFocus(1)
+			return m, nil
+		}
+		if key.Matches(keyMsg, m.keys.PrevScreen) {
+			m.cycleActionModalFocus(-1)
+			return m, nil
+		}
+		if m.action.Mode == actionModalCreateTrigger {
+			switch keyMsg.String() {
+			case "left", "h":
+				if m.action.Focus == 0 {
+					m.cycleActionTriggerType(-1)
+					m.refreshActionValidation()
+					return m, nil
+				}
+			case "right", "l":
+				if m.action.Focus == 0 {
+					m.cycleActionTriggerType(1)
+					m.refreshActionValidation()
+					return m, nil
+				}
+			case " ":
+				if m.action.Focus == 2 {
+					m.action.TriggerActive = !m.action.TriggerActive
+					m.refreshActionValidation()
+					return m, nil
+				}
+			}
+		}
+		if m.action.Mode == actionModalConfirmDelete {
+			if key.Matches(keyMsg, m.keys.Clear) {
+				m.action.Confirm.SetValue("")
+				m.action.Confirm.CursorEnd()
+				m.refreshActionValidation()
+				return m, nil
+			}
+		}
+		if key.Matches(keyMsg, m.keys.Clear) {
+			switch m.action.Mode {
+			case actionModalRenameWorkflow, actionModalRenameTrigger:
+				m.action.Primary.SetValue("")
+				m.action.Primary.CursorEnd()
+				m.refreshActionValidation()
+				return m, nil
+			case actionModalCreateTrigger:
+				if m.action.Focus == 1 {
+					m.action.Primary.SetValue("")
+					m.action.Primary.CursorEnd()
+					m.refreshActionValidation()
+					return m, nil
+				}
+				if m.action.Focus == 3 {
+					m.action.Secondary.SetValue("{}")
+					m.action.Secondary.CursorEnd()
+					m.refreshActionValidation()
+					return m, nil
+				}
+			}
+		}
+	}
+
+	var cmd tea.Cmd
+	switch m.action.Mode {
+	case actionModalRenameWorkflow, actionModalRenameTrigger:
+		m.action.Primary, cmd = m.action.Primary.Update(msg)
+		m.refreshActionValidation()
+		return m, cmd
+	case actionModalCreateTrigger:
+		if m.action.Focus == 1 {
+			m.action.Primary, cmd = m.action.Primary.Update(msg)
+			m.refreshActionValidation()
+			return m, cmd
+		}
+		if m.action.Focus == 3 {
+			m.action.Secondary, cmd = m.action.Secondary.Update(msg)
+			m.refreshActionValidation()
+			return m, cmd
+		}
+	case actionModalConfirmDelete:
+		m.action.Confirm, cmd = m.action.Confirm.Update(msg)
+		m.refreshActionValidation()
+		return m, cmd
+	}
+	return m, nil
+}
+
+func (m *Model) submitActionModal() tea.Cmd {
+	switch m.action.Mode {
+	case actionModalRenameWorkflow:
+		name := strings.TrimSpace(m.action.Primary.Value())
+		if name == "" {
+			return m.pushToast(ToastWarn, "Workflow name cannot be empty")
+		}
+		workflowID := m.action.WorkflowID
+		m.action = actionModalState{}
+		return m.renameWorkflowCmd(workflowID, name)
+	case actionModalRenameTrigger:
+		name := strings.TrimSpace(m.action.Primary.Value())
+		if name == "" {
+			return m.pushToast(ToastWarn, "Trigger name cannot be empty")
+		}
+		workflowID := m.action.WorkflowID
+		triggerID := m.action.TriggerID
+		m.action = actionModalState{}
+		return m.renameTriggerCmd(workflowID, triggerID, name)
+	case actionModalCreateTrigger:
+		name := strings.TrimSpace(m.action.Primary.Value())
+		configValue := strings.TrimSpace(m.action.Secondary.Value())
+		if configValue == "" {
+			configValue = "{}"
+		}
+		workflowID := m.action.WorkflowID
+		triggerType := m.action.TriggerType
+		active := m.action.TriggerActive
+		m.action = actionModalState{}
+		return m.createTriggerCmd(workflowID, triggerType, name, active, configValue)
+	case actionModalConfirmDelete:
+		if errMessage := m.actionModalValidationError(); errMessage != "" {
+			m.action.Validation = errMessage
+			m.action.ShowValidation = true
+			return nil
+		}
+		m.action = actionModalState{}
+		return nil
+	case actionModalCLIHandoff:
+		m.action = actionModalState{}
+		return nil
+	default:
+		m.action = actionModalState{}
+		return nil
+	}
+}
+
+func (m *Model) cycleActionModalFocus(delta int) {
+	total := 0
+	switch m.action.Mode {
+	case actionModalRenameWorkflow, actionModalRenameTrigger:
+		total = 1
+	case actionModalCreateTrigger:
+		total = 4
+	case actionModalConfirmDelete:
+		total = 1
+	default:
+		total = 0
+	}
+	if total <= 1 {
+		return
+	}
+	next := m.action.Focus + delta
+	for next < 0 {
+		next += total
+	}
+	m.action.Focus = next % total
+	m.syncActionModalFocus()
+}
+
+func (m *Model) syncActionModalFocus() {
+	m.action.Primary.Blur()
+	m.action.Secondary.Blur()
+	m.action.Confirm.Blur()
+	switch m.action.Mode {
+	case actionModalRenameWorkflow, actionModalRenameTrigger:
+		m.action.Primary.Focus()
+	case actionModalCreateTrigger:
+		if m.action.Focus == 1 {
+			m.action.Primary.Focus()
+		}
+		if m.action.Focus == 3 {
+			m.action.Secondary.Focus()
+		}
+	case actionModalConfirmDelete:
+		m.action.Confirm.Focus()
+	}
+}
+
+func (m *Model) cycleActionTriggerType(delta int) {
+	order := []string{"MANUAL", "CRON", "WEBHOOK"}
+	index := 0
+	for i, item := range order {
+		if strings.EqualFold(item, m.action.TriggerType) {
+			index = i
+			break
+		}
+	}
+	next := index + delta
+	for next < 0 {
+		next += len(order)
+	}
+	m.action.TriggerType = order[next%len(order)]
 }
 
 func (m *Model) focusNext() {
@@ -1425,6 +2161,34 @@ func buildPalette(theme styles.Theme, recentActions []paletteAction, state palet
 		runSelected.DisabledReason = "Select a workflow row in Workflows first"
 	}
 
+	renameWorkflow := command("Action: Rename selected workflow", "Workflow", paletteAction{Kind: paletteRenameWorkflow}, "rename", "workflow", "name")
+	if !(state.View == ViewWorkflows && state.HasSelection) {
+		renameWorkflow.Enabled = false
+		renameWorkflow.Detail = "Unavailable: select workflow row"
+		renameWorkflow.DisabledReason = "Select a workflow row in Workflows first"
+	}
+
+	createTrigger := command("Action: Create trigger", "Trigger", paletteAction{Kind: paletteCreateTrigger}, "create", "trigger", "workflow")
+	if !((state.View == ViewWorkflows || state.View == ViewTriggers) && state.HasSelection) {
+		createTrigger.Enabled = false
+		createTrigger.Detail = "Unavailable: select workflow or trigger row"
+		createTrigger.DisabledReason = "Select a row in Workflows or Triggers first"
+	}
+
+	renameTrigger := command("Action: Rename selected trigger", "Trigger", paletteAction{Kind: paletteRenameTrigger}, "rename", "trigger", "name")
+	if !(state.View == ViewTriggers && state.HasSelection) {
+		renameTrigger.Enabled = false
+		renameTrigger.Detail = "Unavailable: select trigger row"
+		renameTrigger.DisabledReason = "Select a trigger row in Triggers first"
+	}
+
+	toggleTrigger := command("Action: Toggle selected trigger", "Trigger", paletteAction{Kind: paletteToggleTrigger}, "toggle", "trigger", "active")
+	if !(state.View == ViewTriggers && state.HasSelection) {
+		toggleTrigger.Enabled = false
+		toggleTrigger.Detail = "Unavailable: select trigger row"
+		toggleTrigger.DisabledReason = "Select a trigger row in Triggers first"
+	}
+
 	clearFilters := command("Action: Clear filters", "Table", paletteAction{Kind: paletteClearFilters}, "clear", "filter", "reset")
 	if !state.HasFilter {
 		clearFilters.Enabled = false
@@ -1458,8 +2222,15 @@ func buildPalette(theme styles.Theme, recentActions []paletteAction, state palet
 		command("Go: API Tokens", "Navigation", paletteAction{Kind: paletteGoToView, View: ViewTokens}, "token", "auth", "api"),
 		section(":: Actions"),
 		runSelected,
+		renameWorkflow,
+		createTrigger,
+		renameTrigger,
+		toggleTrigger,
 		clearFilters,
 		command("Toggle: Auto refresh", "System ("+autoStatus+")", paletteAction{Kind: paletteToggleRefresh}, "refresh", "polling", "live"),
+		section(":: CLI Handoff"),
+		command("CLI: Create workflow", "Workflow authoring", paletteAction{Kind: paletteShowCLIHandoff, Value: "workflow-create"}, "cli", "workflow", "create", "definition"),
+		command("CLI: Create workflow version", "Version authoring", paletteAction{Kind: paletteShowCLIHandoff, Value: "workflow-version-create"}, "cli", "version", "definition"),
 		clearRecent,
 		section(":: Network"),
 		profileItem("Network: Fast", NetworkFast, state.Profile == NetworkFast),

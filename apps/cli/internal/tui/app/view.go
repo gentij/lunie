@@ -31,6 +31,10 @@ func Render(m Model) string {
 		modal := components.RenderModal("Help", m.help.View(m.keys), m.width, m.height, m.styles)
 		output = renderOverlay(base, modal, m)
 	}
+	if m.action.Active {
+		modal := renderActionModal(m)
+		output = renderOverlay(base, modal, m)
+	}
 	if m.theme.CRT {
 		output = applyScanlines(output, m.width, m.theme.Scanline)
 	}
@@ -321,6 +325,12 @@ func renderFooterHints(m Model) string {
 		hint = "focus: sidebar  " + themedDivider(m) + "  ↑/↓ select  " + themedDivider(m) + "  enter/right focus main  " + themedDivider(m) + "  tab next pane"
 	} else if m.focus == FocusMain {
 		hint = "focus: main  " + themedDivider(m) + "  ↑/↓ select  " + themedDivider(m) + "  s col  S dir  " + themedDivider(m) + "  g/G top/bottom  " + themedDivider(m) + "  tab next pane"
+		if m.view == ViewWorkflows {
+			hint += "  " + themedDivider(m) + "  r run  e toggle  n rename  c trigger"
+		}
+		if m.view == ViewTriggers {
+			hint += "  " + themedDivider(m) + "  e toggle  n rename  c create"
+		}
 	} else {
 		hint = "focus: context  " + themedDivider(m) + "  j/k scroll  " + themedDivider(m) + "  [/] or 1-4 tabs  " + themedDivider(m) + "  ctrl+f search"
 	}
@@ -483,9 +493,105 @@ func joinLeftRight(left string, right string, width int) string {
 }
 
 func renderOverlay(base string, modal string, m Model) string {
-	background := m.styles.Dim.Render(base)
-	overlay := lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center, modal)
-	return clampToViewport(mergeOverlay(background, overlay, m.height), m.width, m.height)
+	basePlain := ansi.Strip(base)
+	baseLines := padPlainLines(basePlain, m.width, m.height)
+
+	modalLines := strings.Split(modal, "\n")
+	modalW, modalH := lipgloss.Size(modal)
+	if modalW > m.width {
+		modalW = m.width
+	}
+	if modalH > m.height {
+		modalH = m.height
+	}
+	x := max((m.width-modalW)/2, 0)
+	y := max((m.height-modalH)/2, 0)
+
+	out := make([]string, 0, m.height)
+	for row := 0; row < m.height; row++ {
+		line := baseLines[row]
+		if row < y || row >= y+modalH {
+			out = append(out, m.styles.Dim.Render(line))
+			continue
+		}
+		modalLine := ""
+		modalIdx := row - y
+		if modalIdx >= 0 && modalIdx < len(modalLines) {
+			modalLine = ansi.Truncate(modalLines[modalIdx], modalW, "")
+		}
+		segmentW := ansi.StringWidth(modalLine)
+		leftW := min(max(x, 0), m.width)
+		rightStart := min(leftW+segmentW, m.width)
+		left := plainSlice(line, 0, leftW)
+		right := plainSlice(line, rightStart, m.width)
+		composed := m.styles.Dim.Render(left) + modalLine + m.styles.Dim.Render(right)
+		out = append(out, composed)
+	}
+
+	return clampToViewport(strings.Join(out, "\n"), m.width, m.height)
+}
+
+func renderActionModal(m Model) string {
+	hint := "enter submit  |  tab next field  |  esc cancel"
+	body := ""
+	switch m.action.Mode {
+	case actionModalRenameWorkflow:
+		body = strings.Join([]string{
+			m.styles.Dim.Render("Workflow ID: " + m.action.WorkflowID),
+			"",
+			m.action.Primary.View(),
+		}, "\n")
+	case actionModalRenameTrigger:
+		body = strings.Join([]string{
+			m.styles.Dim.Render("Trigger ID: " + m.action.TriggerID),
+			"",
+			m.action.Primary.View(),
+		}, "\n")
+	case actionModalCreateTrigger:
+		typeLine := "Type: " + m.action.TriggerType
+		if m.action.Focus == 0 {
+			typeLine = m.styles.ChipActive.Render(" " + typeLine + " ")
+		}
+		activeLabel := "Active: false"
+		if m.action.TriggerActive {
+			activeLabel = "Active: true"
+		}
+		if m.action.Focus == 2 {
+			activeLabel = m.styles.ChipActive.Render(" " + activeLabel + " ")
+		}
+		hint = "tab next  |  ←/→ type  |  space toggle active  |  enter submit  |  esc cancel"
+		body = strings.Join([]string{
+			m.styles.Dim.Render("Workflow ID: " + m.action.WorkflowID),
+			"",
+			typeLine,
+			m.action.Primary.View(),
+			activeLabel,
+			m.action.Secondary.View(),
+		}, "\n")
+	case actionModalCLIHandoff:
+		hint = "enter/esc close"
+		body = strings.Join([]string{
+			m.styles.Dim.Render(m.action.Description),
+			"",
+			m.styles.PanelTitle.Render("Command"),
+			m.action.CLICommand,
+		}, "\n")
+	case actionModalConfirmDelete:
+		hint = "enter confirm  |  esc cancel"
+		body = strings.Join([]string{
+			m.styles.Dim.Render(m.action.Description),
+			m.styles.Dim.Render("Type exactly: " + m.action.ConfirmPhrase),
+			"",
+			m.action.Confirm.View(),
+		}, "\n")
+	default:
+		body = "No action selected"
+	}
+	if m.action.ShowValidation && strings.TrimSpace(m.action.Validation) != "" {
+		errorLine := lipgloss.NewStyle().Foreground(m.theme.Error).Render("Validation: " + m.action.Validation)
+		body = body + "\n\n" + errorLine
+	}
+	return components.RenderModalWithHint(m.action.Title, body, hint, m.width, m.height, m.styles)
 }
 
 func renderPaletteScreen(m Model) string {
@@ -526,13 +632,54 @@ func mergeOverlay(base string, overlay string, height int) string {
 		if i < len(overlayLines) {
 			overlayLine = overlayLines[i]
 		}
-		if strings.TrimSpace(overlayLine) == "" {
+		if strings.TrimSpace(ansi.Strip(overlayLine)) == "" {
 			lines = append(lines, baseLine)
 			continue
 		}
 		lines = append(lines, overlayLine)
 	}
 	return strings.Join(lines, "\n")
+}
+
+func padPlainLines(content string, width int, height int) []string {
+	lines := strings.Split(content, "\n")
+	result := make([]string, 0, height)
+	for i := 0; i < height; i++ {
+		line := ""
+		if i < len(lines) {
+			line = lines[i]
+		}
+		if width > 0 {
+			r := []rune(line)
+			if len(r) > width {
+				line = string(r[:width])
+			} else if len(r) < width {
+				line += strings.Repeat(" ", width-len(r))
+			}
+		}
+		result = append(result, line)
+	}
+	return result
+}
+
+func plainSlice(line string, start int, end int) string {
+	r := []rune(line)
+	if start < 0 {
+		start = 0
+	}
+	if end < 0 {
+		end = 0
+	}
+	if start > len(r) {
+		start = len(r)
+	}
+	if end > len(r) {
+		end = len(r)
+	}
+	if start >= end {
+		return ""
+	}
+	return string(r[start:end])
 }
 
 func truncateLines(content string, width int) string {

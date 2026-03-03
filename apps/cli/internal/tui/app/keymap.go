@@ -26,6 +26,8 @@ type KeyMap struct {
 	JumpBottom    key.Binding
 	RunWorkflow   key.Binding
 	ToggleActive  key.Binding
+	Rename        key.Binding
+	CreateTrigger key.Binding
 	ViewVersions  key.Binding
 	RevokeToken   key.Binding
 	ToggleWrap    key.Binding
@@ -57,6 +59,8 @@ func DefaultKeyMap() KeyMap {
 		JumpBottom:    key.NewBinding(key.WithKeys("G"), key.WithHelp("G", "bottom")),
 		RunWorkflow:   key.NewBinding(key.WithKeys("r"), key.WithHelp("r", "run now")),
 		ToggleActive:  key.NewBinding(key.WithKeys("e"), key.WithHelp("e", "toggle active")),
+		Rename:        key.NewBinding(key.WithKeys("n"), key.WithHelp("n", "rename")),
+		CreateTrigger: key.NewBinding(key.WithKeys("c"), key.WithHelp("c", "create trigger")),
 		ViewVersions:  key.NewBinding(key.WithKeys("v"), key.WithHelp("v", "view versions")),
 		RevokeToken:   key.NewBinding(key.WithKeys("d"), key.WithHelp("d", "revoke")),
 		ToggleWrap:    key.NewBinding(key.WithKeys("w"), key.WithHelp("w", "wrap logs")),
@@ -84,7 +88,7 @@ func (k KeyMap) FullHelp() [][]key.Binding {
 		{k.NextScreen, k.PrevScreen, k.ToggleContext, k.Search, k.ContextSearch},
 		{k.PanelScroll, k.ContextScroll, k.ContextTabs, k.Palette, k.Help, k.Quit, k.Clear, k.Retry},
 		{k.SortColumn, k.SortDirection, k.JumpTop, k.JumpBottom},
-		{k.RunWorkflow, k.ToggleActive, k.ViewVersions, k.RevokeToken},
+		{k.RunWorkflow, k.ToggleActive, k.Rename, k.CreateTrigger, k.ViewVersions, k.RevokeToken},
 		{k.ToggleWrap, k.LogSearch},
 	}
 }
