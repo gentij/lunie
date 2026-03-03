@@ -58,6 +58,7 @@ func renderSidebar(m Model) string {
 
 	brand := m.styles.SidebarTitle.Render("TASKFORGE")
 	workspace := m.styles.SidebarMuted.Render("WS: " + m.workspaceName)
+	focus := paneFocusTag(m, FocusSidebar, "SIDEBAR")
 	section := m.styles.SidebarSection.Render("Navigation")
 	listView := strings.TrimRight(m.sidebar.View(), "\n")
 
@@ -68,10 +69,11 @@ func renderSidebar(m Model) string {
 		chip(m, refreshChip(m), false),
 		chip(m, "Net "+networkProfileLabel(m.networkProfile), m.networkProfile == NetworkFlaky),
 		chip(m, "Theme "+strings.Title(strings.ReplaceAll(m.themeName, "-", " ")), false),
+		m.styles.Dim.Render("Font hint: " + recommendedFont(m.themeName)),
 	}
 
 	content := joinSidebarContent(
-		[]string{brand, workspace, "", section},
+		[]string{brand, workspace, focus, "", section},
 		strings.Split(listView, "\n"),
 		status,
 		innerHeight,
@@ -127,7 +129,7 @@ func renderMainPanel(m Model) string {
 func renderMainHeader(m Model, width int) string {
 	section := viewTitle(m.view)
 	summary := viewSummary(m)
-	left := m.styles.PanelTitle.Render(section) + "  " + m.styles.Dim.Render("•") + "  " + summary
+	left := m.styles.PanelTitle.Render(section) + "  " + themedDivider(m) + "  " + summary
 	filter := ""
 	if m.searchQuery != "" {
 		filter = "Filter: " + m.searchQuery
@@ -142,6 +144,7 @@ func renderMainHeader(m Model, width int) string {
 	if state := surfaceStateLabel(m.mainState); state != "" {
 		chips = append(chips, chip(m, state, m.mainState == SurfaceError || m.mainState == SurfaceStale))
 	}
+	chips = append(chips, paneFocusTag(m, FocusMain, "MAIN"))
 	if m.searchQuery != "" {
 		chips = append(chips, chip(m, "Filter", true))
 	}
@@ -272,7 +275,7 @@ func contextTabLabel(tab ContextTab) string {
 func renderFooter(m Model) string {
 	left := renderFooterHints(m)
 	if m.toast.Active {
-		left = toastLabel(m) + "  " + m.styles.Dim.Render("•") + "  " + left
+		left = toastLabel(m) + "  " + themedDivider(m) + "  " + left
 	}
 	right := m.paginator.View()
 	line := joinLeftRight(left, right, m.width)
@@ -296,7 +299,7 @@ func renderTableMeta(m Model, width int) string {
 		}
 		sortLabel = strings.ToLower(strings.TrimSpace(m.columns[m.sortColumn].Title)) + " " + dir
 	}
-	text := "rows " + itoa(rows) + "  " + m.styles.Dim.Render("•") + "  filtered " + itoa(filtered) + "  " + m.styles.Dim.Render("•") + "  page " + itoa(page) + "/" + itoa(totalPages) + "  " + m.styles.Dim.Render("•") + "  sort " + sortLabel
+	text := "rows " + itoa(rows) + "  " + themedDivider(m) + "  filtered " + itoa(filtered) + "  " + themedDivider(m) + "  page " + itoa(page) + "/" + itoa(totalPages) + "  " + themedDivider(m) + "  sort " + sortLabel
 	text = ansi.Truncate(text, width, "")
 	return m.styles.Dim.Width(width).Render(text)
 }
@@ -306,25 +309,65 @@ func renderContextMeta(m Model, width int) string {
 	if selected == "" {
 		selected = "none"
 	}
-	left := "selected " + selected
-	right := "tabs [ ] 1-4  " + m.styles.Dim.Render("•") + "  scroll j/k pgup/pgdn"
+	left := paneFocusTag(m, FocusContext, "CONTEXT") + " selected " + selected
+	right := "tabs [ ] 1-4  " + themedDivider(m) + "  scroll j/k pgup/pgdn"
 	line := joinLeftRight(left, right, width)
 	return m.styles.Dim.Width(width).Render(line)
 }
 
 func renderFooterHints(m Model) string {
-	hint := "? help"
+	hint := "focus: " + focusName(m.focus) + "  " + themedDivider(m) + "  ? help"
 	if m.focus == FocusSidebar {
-		hint = "sidebar  ↑/↓ select  •  enter/right focus main  •  tab next pane"
+		hint = "focus: sidebar  " + themedDivider(m) + "  ↑/↓ select  " + themedDivider(m) + "  enter/right focus main  " + themedDivider(m) + "  tab next pane"
 	} else if m.focus == FocusMain {
-		hint = "main  ↑/↓ select  •  s col  S dir  •  g/G top/bottom  •  tab next pane"
+		hint = "focus: main  " + themedDivider(m) + "  ↑/↓ select  " + themedDivider(m) + "  s col  S dir  " + themedDivider(m) + "  g/G top/bottom  " + themedDivider(m) + "  tab next pane"
 	} else {
-		hint = "context  j/k scroll  •  [/] or 1-4 tabs  •  ctrl+f search"
+		hint = "focus: context  " + themedDivider(m) + "  j/k scroll  " + themedDivider(m) + "  [/] or 1-4 tabs  " + themedDivider(m) + "  ctrl+f search"
 	}
 	if m.canRetry() {
-		hint += "  •  ctrl+r retry"
+		hint += "  " + themedDivider(m) + "  ctrl+r retry"
 	}
 	return hint
+}
+
+func paneFocusTag(m Model, pane FocusPane, label string) string {
+	if m.focus == pane {
+		return chip(m, ">> "+label, true)
+	}
+	return m.styles.Dim.Render("   " + strings.ToLower(label))
+}
+
+func focusName(pane FocusPane) string {
+	switch pane {
+	case FocusSidebar:
+		return "sidebar"
+	case FocusContext:
+		return "context"
+	default:
+		return "main"
+	}
+}
+
+func themedDivider(m Model) string {
+	if m.themeName == "fallout" || m.themeName == "retro-amber" {
+		return m.styles.Dim.Render("::")
+	}
+	return m.styles.Dim.Render("•")
+}
+
+func recommendedFont(themeName string) string {
+	switch themeName {
+	case "fallout":
+		return "IBM Plex Mono"
+	case "retro-amber":
+		return "Berkeley Mono"
+	case "tokyo-night":
+		return "JetBrains Mono"
+	case "catppuccin":
+		return "Iosevka"
+	default:
+		return "Cascadia Mono"
+	}
 }
 
 func chip(m Model, text string, active bool) string {

@@ -132,7 +132,7 @@ func ThemeRegistry() map[string]Theme {
 			Background: lipgloss.Color("#050A05"),
 			Surface:    lipgloss.Color("#0B140B"),
 			SurfaceAlt: lipgloss.Color("#081108"),
-			Border:     lipgloss.Color("#3BFF6A"),
+			Border:     lipgloss.Color("#2D7A3C"),
 			Text:       lipgloss.Color("#B8FFB0"),
 			Muted:      lipgloss.Color("#6FBF6A"),
 			Accent:     lipgloss.Color("#7CFF6B"),
@@ -154,7 +154,7 @@ func ThemeRegistry() map[string]Theme {
 			Background: lipgloss.Color("#120A05"),
 			Surface:    lipgloss.Color("#1A0F08"),
 			SurfaceAlt: lipgloss.Color("#140B06"),
-			Border:     lipgloss.Color("#F3A83A"),
+			Border:     lipgloss.Color("#8B5C24"),
 			Text:       lipgloss.Color("#FCE9C1"),
 			Muted:      lipgloss.Color("#C98D4A"),
 			Accent:     lipgloss.Color("#F2B24C"),
@@ -184,10 +184,10 @@ func NewStyles(theme Theme) StyleSet {
 			Foreground(theme.Muted),
 		PanelBorder: lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
-			BorderForeground(theme.Border).
+			BorderForeground(theme.Muted).
 			Background(theme.Surface),
 		PanelBorderFocus: lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
+			Border(lipgloss.ThickBorder()).
 			BorderForeground(theme.Accent).
 			Background(theme.Surface),
 		PanelTitle: lipgloss.NewStyle().
