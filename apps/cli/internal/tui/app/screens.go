@@ -359,30 +359,38 @@ func contextJSONContent(view ViewID, store *data.Store, selectedID string) strin
 
 func contextStepsContent(view ViewID, store *data.Store, selectedID string) string {
 	if view != ViewRuns && view != ViewDashboard {
-		return "Steps are available for workflow runs. Open Runs and select a run."
+		return "Steps\n\nUnsupported for this view. Open Runs and select a run."
 	}
 	steps := stepsForRun(store, selectedID)
 	if len(steps) == 0 {
-		return "No step data for selected run"
+		return "Steps\n\nNo step data for selected run"
 	}
-	lines := []string{"Steps"}
+	lines := []string{"Steps", strings.Repeat("-", 24)}
 	for _, step := range steps {
-		lines = append(lines, fmt.Sprintf("- %s  %s  %s", step.StepKey, strings.ToLower(step.Status), formatDuration(step.Duration)))
+		lines = append(lines, fmt.Sprintf("%s", step.StepKey))
+		lines = append(lines, fmt.Sprintf("  status   %s", strings.ToLower(step.Status)))
+		lines = append(lines, fmt.Sprintf("  duration %s", formatDuration(step.Duration)))
+		lines = append(lines, "")
 	}
 	return strings.Join(lines, "\n")
 }
 
 func contextLogsContent(view ViewID, store *data.Store, selectedID string) string {
 	if view != ViewRuns && view != ViewDashboard {
-		return "Logs are available for workflow runs. Open Runs and select a run."
+		return "Logs\n\nUnsupported for this view. Open Runs and select a run."
 	}
 	steps := stepsForRun(store, selectedID)
 	if len(steps) == 0 {
-		return "No logs for selected run"
+		return "Logs\n\nNo logs for selected run"
 	}
-	lines := []string{"Step Logs"}
+	lines := []string{"Logs", strings.Repeat("-", 24)}
 	for _, step := range steps {
 		lines = append(lines, "", step.StepKey)
+		sep := len(step.StepKey)
+		if sep < 8 {
+			sep = 8
+		}
+		lines = append(lines, "  "+strings.Repeat("-", sep))
 		lines = append(lines, utils.Indent(step.Log, "  "))
 	}
 	return strings.Join(lines, "\n")

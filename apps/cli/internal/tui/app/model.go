@@ -53,7 +53,9 @@ const (
 	paletteToggleRefresh
 	paletteClearFilters
 	paletteRunWorkflow
+	paletteClearRecent
 	paletteSetTheme
+	paletteSetNetworkProfile
 )
 
 type pulseMsg struct{}
@@ -96,9 +98,19 @@ type ToastState struct {
 	Message string
 }
 
+type NetworkProfile int
+
+const (
+	NetworkFast NetworkProfile = iota
+	NetworkNormal
+	NetworkSlow
+	NetworkFlaky
+)
+
 type paletteAction struct {
-	Kind paletteActionType
-	View ViewID
+	Kind    paletteActionType
+	View    ViewID
+	Profile NetworkProfile
 }
 
 type ContextTab int
@@ -111,10 +123,22 @@ const (
 )
 
 type paletteItem struct {
-	Label   string
-	Detail  string
-	Action  paletteAction
-	Section bool
+	Label          string
+	Detail         string
+	Action         paletteAction
+	Section        bool
+	Enabled        bool
+	DisabledReason string
+	Keywords       []string
+}
+
+type paletteBuildState struct {
+	View         ViewID
+	HasSelection bool
+	HasFilter    bool
+	AutoRefresh  bool
+	Profile      NetworkProfile
+	HasRecent    bool
 }
 
 type SortConfig struct {
@@ -126,7 +150,11 @@ func (p paletteItem) FilterValue() string {
 	if p.Section {
 		return ""
 	}
-	return p.Label
+	parts := []string{p.Label, p.Detail, strings.Join(p.Keywords, " ")}
+	if !p.Enabled && p.DisabledReason != "" {
+		parts = append(parts, p.DisabledReason)
+	}
+	return strings.Join(parts, " ")
 }
 func (p paletteItem) Title() string       { return p.Label }
 func (p paletteItem) Description() string { return p.Detail }
@@ -200,6 +228,7 @@ type Model struct {
 	pulseOn        bool
 	refreshPending bool
 	refreshCount   int
+	networkProfile NetworkProfile
 	workspaceName  string
 	workerCount    int
 	apiStatus      string
@@ -235,7 +264,7 @@ func NewModel(client *api.Client, serverURL string, tokenSet bool, cfg config.Co
 	contextSearch.CharLimit = 64
 
 	defaultTheme := styles.DefaultTheme()
-	palette := buildPalette(defaultTheme, nil)
+	palette := buildPalette(defaultTheme, nil, paletteBuildState{View: ViewDashboard, Profile: NetworkNormal})
 	sidebar := buildSidebar(defaultTheme, ViewDashboard)
 	styleSet := styles.NewStyles(defaultTheme)
 
@@ -277,6 +306,7 @@ func NewModel(client *api.Client, serverURL string, tokenSet bool, cfg config.Co
 		pulseOn:            false,
 		refreshPending:     false,
 		refreshCount:       0,
+		networkProfile:     NetworkNormal,
 		workspaceName:      "personal",
 		workerCount:        2,
 		apiStatus:          apiStatus(tokenSet),
@@ -289,6 +319,7 @@ func NewModel(client *api.Client, serverURL string, tokenSet bool, cfg config.Co
 		sortColumn:         -1,
 		sortDesc:           true,
 	}
+	model.setNetworkProfile(NetworkNormal)
 
 	model.applyTheme(cfg.Theme, false)
 
@@ -304,7 +335,7 @@ func (m Model) Init() tea.Cmd {
 		width, height := initialSize()
 		return tea.WindowSizeMsg{Width: width, Height: height}
 	}
-	return tea.Batch(windowSizeCmd, pulseTick(), initialLoadTick())
+	return tea.Batch(windowSizeCmd, pulseTick(), initialLoadTick(m.profileDelay()))
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -324,7 +355,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds := []tea.Cmd{pulseTick()}
 		if m.autoRefresh && !m.refreshPending && time.Since(m.lastRefresh) >= m.refreshEvery {
 			m.startMockRefresh(false)
-			cmds = append(cmds, mockRefreshTick(m.refreshCount%5 == 4))
+			cmds = append(cmds, mockRefreshTick(m.profileDelay(), m.profileShouldFail(false)))
 		}
 		return m, tea.Batch(cmds...)
 	case uiLoadDoneMsg:
@@ -531,7 +562,7 @@ func (m *Model) applyTheme(themeKey string, persist bool) {
 	m.styles = styles.NewStyles(selected)
 	m.table.SetStyles(components.TableStyles(m.styles))
 	m.inspector.ApplyStyles(m.styles)
-	m.palette = buildPalette(m.theme, m.paletteRecent)
+	m.palette = buildPalette(m.theme, m.paletteRecent, m.paletteState())
 	m.sidebar = buildSidebar(m.theme, m.view)
 	m.resizePalette()
 
@@ -593,10 +624,10 @@ func (m *Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if key.Matches(msg, m.keys.Retry) && m.canRetry() {
 		m.startMockRefresh(true)
 		clearToastCmd := m.pushToast(ToastInfo, "Retrying refresh...")
-		return m, tea.Batch(mockRefreshTick(false), clearToastCmd)
+		return m, tea.Batch(mockRefreshTick(m.profileDelay(), m.profileShouldFail(true)), clearToastCmd)
 	}
 	if key.Matches(msg, m.keys.Palette) {
-		m.palette = buildPalette(m.theme, m.paletteRecent)
+		m.palette = buildPalette(m.theme, m.paletteRecent, m.paletteState())
 		m.resizePalette()
 		m.palette.ResetFilter()
 		m.ensurePaletteSelection(true)
@@ -891,8 +922,16 @@ func (m *Model) updatePalette(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if key.Matches(keyMsg, m.keys.Enter) {
 			item, ok := m.palette.SelectedItem().(paletteItem)
 			if ok && !item.Section {
-				m.runPaletteAction(item.Action)
+				if !item.Enabled {
+					msg := "Command unavailable"
+					if item.DisabledReason != "" {
+						msg = item.DisabledReason
+					}
+					return m, m.pushToast(ToastWarn, msg)
+				}
+				cmd := m.runPaletteAction(item.Action)
 				m.showPalette = false
+				return m, cmd
 			}
 			return m, nil
 		}
@@ -955,25 +994,45 @@ func shouldAutoStartPaletteFilter(msg tea.KeyMsg, alreadyFiltering bool) bool {
 	return false
 }
 
-func (m *Model) runPaletteAction(action paletteAction) {
-	m.rememberPaletteAction(action)
+func (m *Model) runPaletteAction(action paletteAction) tea.Cmd {
 	switch action.Kind {
 	case paletteNoop:
-		return
+		return nil
 	case paletteGoToView:
+		m.rememberPaletteAction(action)
 		m.view = action.View
 		m.refreshView()
+		return nil
 	case paletteToggleRefresh:
+		m.rememberPaletteAction(action)
 		m.autoRefresh = !m.autoRefresh
+		if m.autoRefresh {
+			m.lastRefresh = time.Now()
+		}
+		return m.pushToast(ToastInfo, "Auto refresh toggled")
 	case paletteClearFilters:
+		m.rememberPaletteAction(action)
 		m.searchQuery = ""
 		m.searchInput.SetValue("")
 		m.applyFilter()
+		return m.pushToast(ToastInfo, "Filters cleared")
 	case paletteRunWorkflow:
+		m.rememberPaletteAction(action)
 		m.queueRunForSelectedWorkflow()
+		return m.pushToast(ToastSuccess, "Workflow run queued")
+	case paletteClearRecent:
+		m.paletteRecent = nil
+		return m.pushToast(ToastInfo, "Recent commands cleared")
 	case paletteSetTheme:
+		m.rememberPaletteAction(action)
 		m.applyTheme(string(action.View), true)
+		return m.pushToast(ToastInfo, "Theme switched")
+	case paletteSetNetworkProfile:
+		m.rememberPaletteAction(action)
+		m.setNetworkProfile(action.Profile)
+		return m.pushToast(ToastInfo, "Network profile set to "+strings.ToLower(networkProfileLabel(action.Profile)))
 	}
+	return nil
 }
 
 func pulseTick() tea.Cmd {
@@ -982,16 +1041,82 @@ func pulseTick() tea.Cmd {
 	})
 }
 
-func initialLoadTick() tea.Cmd {
-	return tea.Tick(220*time.Millisecond, func(time.Time) tea.Msg {
+func initialLoadTick(delay time.Duration) tea.Cmd {
+	return tea.Tick(delay, func(time.Time) tea.Msg {
 		return uiLoadDoneMsg{}
 	})
 }
 
-func mockRefreshTick(failed bool) tea.Cmd {
-	return tea.Tick(200*time.Millisecond, func(time.Time) tea.Msg {
+func mockRefreshTick(delay time.Duration, failed bool) tea.Cmd {
+	return tea.Tick(delay, func(time.Time) tea.Msg {
 		return mockRefreshDoneMsg{failed: failed}
 	})
+}
+
+func (m Model) profileDelay() time.Duration {
+	switch m.networkProfile {
+	case NetworkFast:
+		return 90 * time.Millisecond
+	case NetworkSlow:
+		return 900 * time.Millisecond
+	case NetworkFlaky:
+		return 550 * time.Millisecond
+	default:
+		return 240 * time.Millisecond
+	}
+}
+
+func (m Model) profileShouldFail(manual bool) bool {
+	if m.networkProfile != NetworkFlaky {
+		return false
+	}
+	if manual {
+		return m.refreshCount%4 == 0
+	}
+	return m.refreshCount%3 == 0
+}
+
+func (m Model) profileRefreshEvery() time.Duration {
+	switch m.networkProfile {
+	case NetworkFast:
+		return 1200 * time.Millisecond
+	case NetworkSlow:
+		return 4 * time.Second
+	case NetworkFlaky:
+		return 2500 * time.Millisecond
+	default:
+		return 2 * time.Second
+	}
+}
+
+func (m *Model) setNetworkProfile(profile NetworkProfile) {
+	m.networkProfile = profile
+	m.refreshEvery = m.profileRefreshEvery()
+	m.lastRefresh = time.Now()
+}
+
+func networkProfileLabel(profile NetworkProfile) string {
+	switch profile {
+	case NetworkFast:
+		return "FAST"
+	case NetworkSlow:
+		return "SLOW"
+	case NetworkFlaky:
+		return "FLAKY"
+	default:
+		return "NORMAL"
+	}
+}
+
+func (m Model) paletteState() paletteBuildState {
+	return paletteBuildState{
+		View:         m.view,
+		HasSelection: m.selectedRowID() != "",
+		HasFilter:    strings.TrimSpace(m.searchQuery) != "",
+		AutoRefresh:  m.autoRefresh,
+		Profile:      m.networkProfile,
+		HasRecent:    len(m.paletteRecent) > 0,
+	}
 }
 
 func (m *Model) startMockRefresh(manual bool) {
@@ -1059,47 +1184,77 @@ func (m *Model) rememberPaletteAction(action paletteAction) {
 }
 
 func paletteActionKey(action paletteAction) string {
-	return fmt.Sprintf("%d:%s", action.Kind, action.View)
+	return fmt.Sprintf("%d:%s:%d", action.Kind, action.View, action.Profile)
 }
 
-func paletteItemFromAction(action paletteAction) paletteItem {
+func paletteItemFromAction(action paletteAction, state paletteBuildState) paletteItem {
+	item := paletteItem{Label: "Action", Detail: "Recent", Action: action, Enabled: true}
 	switch action.Kind {
 	case paletteGoToView:
 		switch action.View {
 		case ViewDashboard:
-			return paletteItem{Label: "Go: Dashboard", Detail: "Recent", Action: action}
+			item.Label = "Go: Dashboard"
 		case ViewWorkflows:
-			return paletteItem{Label: "Go: Workflows", Detail: "Recent", Action: action}
+			item.Label = "Go: Workflows"
 		case ViewRuns:
-			return paletteItem{Label: "Go: Runs", Detail: "Recent", Action: action}
+			item.Label = "Go: Runs"
 		case ViewTriggers:
-			return paletteItem{Label: "Go: Triggers", Detail: "Recent", Action: action}
+			item.Label = "Go: Triggers"
 		case ViewEvents:
-			return paletteItem{Label: "Go: Events", Detail: "Recent", Action: action}
+			item.Label = "Go: Events"
 		case ViewSecrets:
-			return paletteItem{Label: "Go: Secrets", Detail: "Recent", Action: action}
+			item.Label = "Go: Secrets"
 		case ViewTokens:
-			return paletteItem{Label: "Go: API Tokens", Detail: "Recent", Action: action}
+			item.Label = "Go: API Tokens"
 		}
 	case paletteRunWorkflow:
-		return paletteItem{Label: "Action: Run selected workflow", Detail: "Recent", Action: action}
+		item.Label = "Action: Run selected workflow"
+		if !(state.View == ViewWorkflows && state.HasSelection) {
+			item.Enabled = false
+			item.Detail = "Unavailable: select workflow row"
+			item.DisabledReason = "Select a workflow row in Workflows first"
+		}
 	case paletteClearFilters:
-		return paletteItem{Label: "Action: Clear filters", Detail: "Recent", Action: action}
+		item.Label = "Action: Clear filters"
+		if !state.HasFilter {
+			item.Enabled = false
+			item.Detail = "Unavailable: no active filters"
+			item.DisabledReason = "No search filter is active"
+		}
 	case paletteToggleRefresh:
-		return paletteItem{Label: "Toggle: Auto refresh", Detail: "Recent", Action: action}
+		item.Label = "Toggle: Auto refresh"
 	case paletteSetTheme:
+		item.Label = "Theme"
 		switch action.View {
 		case ViewID("catppuccin"):
-			return paletteItem{Label: "Theme: Catppuccin", Detail: "Recent", Action: action}
+			item.Label = "Theme: Catppuccin"
 		case ViewID("tokyo-night"):
-			return paletteItem{Label: "Theme: Tokyo Night", Detail: "Recent", Action: action}
+			item.Label = "Theme: Tokyo Night"
 		case ViewID("fallout"):
-			return paletteItem{Label: "Theme: Fallout (CRT)", Detail: "Recent", Action: action}
+			item.Label = "Theme: Fallout (CRT)"
 		case ViewID("retro-amber"):
-			return paletteItem{Label: "Theme: Retro Amber", Detail: "Recent", Action: action}
+			item.Label = "Theme: Retro Amber"
+		}
+	case paletteSetNetworkProfile:
+		switch action.Profile {
+		case NetworkFast:
+			item.Label = "Network: Fast"
+		case NetworkNormal:
+			item.Label = "Network: Normal"
+		case NetworkSlow:
+			item.Label = "Network: Slow"
+		case NetworkFlaky:
+			item.Label = "Network: Flaky"
+		}
+	case paletteClearRecent:
+		item.Label = "Action: Clear recent commands"
+		if !state.HasRecent {
+			item.Enabled = false
+			item.Detail = "Unavailable: no recent commands"
+			item.DisabledReason = "Run commands from the palette first"
 		}
 	}
-	return paletteItem{Label: "Action", Detail: "Recent", Action: action}
+	return item
 }
 
 func (m *Model) nextView() {
@@ -1251,38 +1406,86 @@ func (m *Model) queueRunForSelectedWorkflow() {
 	m.refreshView()
 }
 
-func buildPalette(theme styles.Theme, recentActions []paletteAction) list.Model {
+func buildPalette(theme styles.Theme, recentActions []paletteAction, state paletteBuildState) list.Model {
+	section := func(label string) paletteItem {
+		return paletteItem{Label: label, Section: true, Enabled: false, Action: paletteAction{Kind: paletteNoop}}
+	}
+	command := func(label string, detail string, action paletteAction, keywords ...string) paletteItem {
+		return paletteItem{Label: label, Detail: detail, Action: action, Enabled: true, Keywords: keywords}
+	}
+
+	autoStatus := "OFF"
+	if state.AutoRefresh {
+		autoStatus = "ON"
+	}
+
+	runSelected := command("Action: Run selected workflow", "Workflow", paletteAction{Kind: paletteRunWorkflow}, "run", "workflow", "queue")
+	if !(state.View == ViewWorkflows && state.HasSelection) {
+		runSelected.Enabled = false
+		runSelected.Detail = "Unavailable: select workflow row"
+		runSelected.DisabledReason = "Select a workflow row in Workflows first"
+	}
+
+	clearFilters := command("Action: Clear filters", "Table", paletteAction{Kind: paletteClearFilters}, "clear", "filter", "reset")
+	if !state.HasFilter {
+		clearFilters.Enabled = false
+		clearFilters.Detail = "Unavailable: no active filters"
+		clearFilters.DisabledReason = "No search filter is active"
+	}
+
+	clearRecent := command("Action: Clear recent commands", "System", paletteAction{Kind: paletteClearRecent}, "recent", "history", "clear")
+	if !state.HasRecent {
+		clearRecent.Enabled = false
+		clearRecent.Detail = "Unavailable: no recent commands"
+		clearRecent.DisabledReason = "Run commands from the palette first"
+	}
+
+	profileItem := func(label string, profile NetworkProfile, active bool) paletteItem {
+		detail := "Network"
+		if active {
+			detail = "Network (active)"
+		}
+		return command(label, detail, paletteAction{Kind: paletteSetNetworkProfile, Profile: profile}, "network", "latency", "profile")
+	}
+
 	items := []list.Item{
-		paletteItem{Label: ":: Navigation", Detail: "", Section: true, Action: paletteAction{Kind: paletteNoop}},
-		paletteItem{Label: "Go: Dashboard", Detail: "Navigation", Action: paletteAction{Kind: paletteGoToView, View: ViewDashboard}},
-		paletteItem{Label: "Go: Workflows", Detail: "Navigation", Action: paletteAction{Kind: paletteGoToView, View: ViewWorkflows}},
-		paletteItem{Label: "Go: Runs", Detail: "Navigation", Action: paletteAction{Kind: paletteGoToView, View: ViewRuns}},
-		paletteItem{Label: "Go: Triggers", Detail: "Navigation", Action: paletteAction{Kind: paletteGoToView, View: ViewTriggers}},
-		paletteItem{Label: "Go: Events", Detail: "Navigation", Action: paletteAction{Kind: paletteGoToView, View: ViewEvents}},
-		paletteItem{Label: "Go: Secrets", Detail: "Navigation", Action: paletteAction{Kind: paletteGoToView, View: ViewSecrets}},
-		paletteItem{Label: "Go: API Tokens", Detail: "Navigation", Action: paletteAction{Kind: paletteGoToView, View: ViewTokens}},
-		paletteItem{Label: ":: Actions", Detail: "", Section: true, Action: paletteAction{Kind: paletteNoop}},
-		paletteItem{Label: "Action: Run selected workflow", Detail: "Workflow", Action: paletteAction{Kind: paletteRunWorkflow}},
-		paletteItem{Label: "Action: Clear filters", Detail: "Table", Action: paletteAction{Kind: paletteClearFilters}},
-		paletteItem{Label: "Toggle: Auto refresh", Detail: "System", Action: paletteAction{Kind: paletteToggleRefresh}},
-		paletteItem{Label: ":: Themes", Detail: "", Section: true, Action: paletteAction{Kind: paletteNoop}},
-		paletteItem{Label: "Theme: Catppuccin", Detail: "Theme", Action: paletteAction{Kind: paletteSetTheme, View: ViewID("catppuccin")}},
-		paletteItem{Label: "Theme: Tokyo Night", Detail: "Theme", Action: paletteAction{Kind: paletteSetTheme, View: ViewID("tokyo-night")}},
-		paletteItem{Label: "Theme: Fallout (CRT)", Detail: "Theme", Action: paletteAction{Kind: paletteSetTheme, View: ViewID("fallout")}},
-		paletteItem{Label: "Theme: Retro Amber", Detail: "Theme", Action: paletteAction{Kind: paletteSetTheme, View: ViewID("retro-amber")}},
+		section(":: Navigation"),
+		command("Go: Dashboard", "Navigation", paletteAction{Kind: paletteGoToView, View: ViewDashboard}, "dash", "home", "overview"),
+		command("Go: Workflows", "Navigation", paletteAction{Kind: paletteGoToView, View: ViewWorkflows}, "wf", "workflow"),
+		command("Go: Runs", "Navigation", paletteAction{Kind: paletteGoToView, View: ViewRuns}, "run", "jobs"),
+		command("Go: Triggers", "Navigation", paletteAction{Kind: paletteGoToView, View: ViewTriggers}, "trigger"),
+		command("Go: Events", "Navigation", paletteAction{Kind: paletteGoToView, View: ViewEvents}, "event", "webhook"),
+		command("Go: Secrets", "Navigation", paletteAction{Kind: paletteGoToView, View: ViewSecrets}, "secret", "vault"),
+		command("Go: API Tokens", "Navigation", paletteAction{Kind: paletteGoToView, View: ViewTokens}, "token", "auth", "api"),
+		section(":: Actions"),
+		runSelected,
+		clearFilters,
+		command("Toggle: Auto refresh", "System ("+autoStatus+")", paletteAction{Kind: paletteToggleRefresh}, "refresh", "polling", "live"),
+		clearRecent,
+		section(":: Network"),
+		profileItem("Network: Fast", NetworkFast, state.Profile == NetworkFast),
+		profileItem("Network: Normal", NetworkNormal, state.Profile == NetworkNormal),
+		profileItem("Network: Slow", NetworkSlow, state.Profile == NetworkSlow),
+		profileItem("Network: Flaky", NetworkFlaky, state.Profile == NetworkFlaky),
+		section(":: Themes"),
+		command("Theme: Catppuccin", "Theme", paletteAction{Kind: paletteSetTheme, View: ViewID("catppuccin")}, "theme", "pastel"),
+		command("Theme: Tokyo Night", "Theme", paletteAction{Kind: paletteSetTheme, View: ViewID("tokyo-night")}, "theme", "blue"),
+		command("Theme: Fallout (CRT)", "Theme", paletteAction{Kind: paletteSetTheme, View: ViewID("fallout")}, "theme", "crt", "green"),
+		command("Theme: Retro Amber", "Theme", paletteAction{Kind: paletteSetTheme, View: ViewID("retro-amber")}, "theme", "amber", "crt"),
 	}
 	if len(recentActions) > 0 {
 		recent := make([]list.Item, 0, len(recentActions)+1)
-		recent = append(recent, paletteItem{Label: ":: Recent", Detail: "", Section: true, Action: paletteAction{Kind: paletteNoop}})
+		recent = append(recent, section(":: Recent"))
 		for _, action := range recentActions {
-			recent = append(recent, paletteItemFromAction(action))
+			recent = append(recent, paletteItemFromAction(action, state))
 		}
 		items = append(recent, items...)
 	}
 
 	delegate := list.NewDefaultDelegate()
-	delegate.ShowDescription = true
+	delegate.ShowDescription = false
 	delegate.SetHeight(1)
+	delegate.SetSpacing(0)
 	selectedBorder := lipgloss.NewStyle().
 		Border(lipgloss.NormalBorder(), false, false, false, true).
 		BorderForeground(theme.Accent)

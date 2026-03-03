@@ -66,6 +66,7 @@ func renderSidebar(m Model) string {
 		chip(m, "API "+m.apiStatus, m.apiStatus == "CONNECTED"),
 		chip(m, "Workers "+itoa(m.workerCount), false),
 		chip(m, refreshChip(m), false),
+		chip(m, "Net "+networkProfileLabel(m.networkProfile), m.networkProfile == NetworkFlaky),
 		chip(m, "Theme "+strings.Title(strings.ReplaceAll(m.themeName, "-", " ")), false),
 	}
 
@@ -136,6 +137,7 @@ func renderMainHeader(m Model, width int) string {
 		chip(m, "API "+m.apiStatus, m.apiStatus == "CONNECTED"),
 		chip(m, "Workers "+itoa(m.workerCount), false),
 		chip(m, refreshChip(m), false),
+		chip(m, "Net "+networkProfileLabel(m.networkProfile), m.networkProfile == NetworkFlaky),
 	}
 	if state := surfaceStateLabel(m.mainState); state != "" {
 		chips = append(chips, chip(m, state, m.mainState == SurfaceError || m.mainState == SurfaceStale))
@@ -451,8 +453,11 @@ func renderPaletteScreen(m Model) string {
 	divider := m.styles.Divider.Render(strings.Repeat("─", innerWidth))
 
 	listHeight := max(innerHeight-3, 1)
-	paletteView := strings.TrimRight(m.palette.View(), "\n")
-	paletteView = clampSection(paletteView, innerWidth, listHeight)
+	palette := m.palette
+	palette.SetSize(innerWidth, listHeight)
+	paletteView := strings.TrimRight(palette.View(), "\n")
+	paletteView = sanitizeRenderable(paletteView)
+	paletteView = lipgloss.Place(innerWidth, listHeight, lipgloss.Left, lipgloss.Top, paletteView)
 
 	body := strings.Join([]string{headerTitle, headerHint, divider, paletteView}, "\n")
 	filled := applyBackgroundLayer(body, innerWidth, innerHeight, m.styles.PanelFill)
