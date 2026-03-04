@@ -253,6 +253,20 @@ func themedDivider(m Model) string {
 
 func recommendedFont(themeName string) string {
 	switch themeName {
+	case "dracula":
+		return "Fira Code"
+	case "one-dark-pro":
+		return "JetBrains Mono"
+	case "rose-pine-moon":
+		return "Iosevka"
+	case "solarized-dark":
+		return "Source Code Pro"
+	case "nord":
+		return "Recursive Mono"
+	case "gruvbox-dark":
+		return "IBM Plex Mono"
+	case "solarized-light":
+		return "Source Code Pro"
 	case "fallout":
 		return "IBM Plex Mono"
 	case "retro-amber":

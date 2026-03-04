@@ -216,6 +216,20 @@ func paletteItemFromAction(action paletteAction, state paletteBuildState) palett
 	case paletteSetTheme:
 		item.Label = "Theme"
 		switch action.View {
+		case ViewID("dracula"):
+			item.Label = "Theme: Dracula"
+		case ViewID("one-dark-pro"):
+			item.Label = "Theme: One Dark Pro"
+		case ViewID("rose-pine-moon"):
+			item.Label = "Theme: Rose Pine Moon"
+		case ViewID("solarized-dark"):
+			item.Label = "Theme: Solarized Dark"
+		case ViewID("nord"):
+			item.Label = "Theme: Nord"
+		case ViewID("gruvbox-dark"):
+			item.Label = "Theme: Gruvbox Dark"
+		case ViewID("solarized-light"):
+			item.Label = "Theme: Solarized Light"
 		case ViewID("catppuccin"):
 			item.Label = "Theme: Catppuccin"
 		case ViewID("tokyo-night"):
@@ -446,6 +460,13 @@ func buildPalette(theme styles.Theme, recentActions []paletteAction, state palet
 		profileItem("Network: Slow", NetworkSlow, state.Profile == NetworkSlow),
 		profileItem("Network: Flaky", NetworkFlaky, state.Profile == NetworkFlaky),
 		section(":: Themes"),
+		command("Theme: Dracula", "Theme", paletteAction{Kind: paletteSetTheme, View: ViewID("dracula")}, "theme", "purple", "contrast"),
+		command("Theme: One Dark Pro", "Theme", paletteAction{Kind: paletteSetTheme, View: ViewID("one-dark-pro")}, "theme", "onedark", "modern"),
+		command("Theme: Rose Pine Moon", "Theme", paletteAction{Kind: paletteSetTheme, View: ViewID("rose-pine-moon")}, "theme", "rose", "soft"),
+		command("Theme: Solarized Dark", "Theme", paletteAction{Kind: paletteSetTheme, View: ViewID("solarized-dark")}, "theme", "solarized", "dark"),
+		command("Theme: Nord", "Theme", paletteAction{Kind: paletteSetTheme, View: ViewID("nord")}, "theme", "cool", "blue"),
+		command("Theme: Gruvbox Dark", "Theme", paletteAction{Kind: paletteSetTheme, View: ViewID("gruvbox-dark")}, "theme", "warm", "earth"),
+		command("Theme: Solarized Light", "Theme", paletteAction{Kind: paletteSetTheme, View: ViewID("solarized-light")}, "theme", "light", "day"),
 		command("Theme: Catppuccin", "Theme", paletteAction{Kind: paletteSetTheme, View: ViewID("catppuccin")}, "theme", "pastel"),
 		command("Theme: Tokyo Night", "Theme", paletteAction{Kind: paletteSetTheme, View: ViewID("tokyo-night")}, "theme", "blue"),
 		command("Theme: Fallout (CRT)", "Theme", paletteAction{Kind: paletteSetTheme, View: ViewID("fallout")}, "theme", "crt", "green"),
