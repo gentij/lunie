@@ -101,3 +101,8 @@ packages/queue-config ─┘                  │──▶ apps/worker
 | `PORT` | No | Server port (default: 3000) |
 | `VERSION` | No | API version (default: 0.1.0) |
 | `LOG_LEVEL` | No | Pino log level (default: info) |
+
+## Related Documentation
+
+- TUI usage and internals: `docs/Taskforge - TUI.md`
+- Development setup and workflows: `docs/Development.md`

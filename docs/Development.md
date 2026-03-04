@@ -294,6 +294,7 @@ chore: update dependencies
 
 ## Learning Resources
 
+- [Taskforge TUI Guide](./Taskforge%20-%20TUI.md)
 - [Workflow Engine Concepts](./Taskforge%20-%20Workflow%20Engine.md)
 - [Queues and Workers Plan](./Taskforge%20-%20Queues%20and%20Workers%20Plan.md)
 - [NestJS Documentation](https://docs.nestjs.com)
