@@ -1,3 +1,9 @@
+---
+id: initial-project-overview
+title: Initial Project Overview (Archive)
+description: Early planning snapshot from initial Taskforge design phase.
+slug: /archive/initial-project-overview
+---
 
 # TaskForge — Self-Hosted Workflow & Automation Engine
 

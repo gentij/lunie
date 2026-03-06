@@ -2,7 +2,10 @@
   "scripts": {
     "prepare": "husky",
     "start:dev": "cd ./apps/server && pnpm run start:dev",
-    "db:dev": "cd deploy/compose && docker compose up -d"
+    "db:dev": "cd deploy/compose && docker compose up -d",
+    "docs:dev": "pnpm -C apps/docs start",
+    "docs:build": "pnpm -C apps/docs build",
+    "docs:serve": "pnpm -C apps/docs serve"
   },
   "devDependencies": {
     "husky": "^9.1.7",

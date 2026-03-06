@@ -1,3 +1,10 @@
+---
+id: queues-and-workers-plan
+title: Queues and Workers Plan (Archive)
+description: Planning document for Taskforge queue and worker architecture.
+slug: /archive/queues-and-workers-plan
+---
+
 # Taskforge - Queues and Workers Plan
 
 > Planning document.

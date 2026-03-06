@@ -17,6 +17,8 @@ Current MVP step types:
 - `transform`
 - `condition`
 
+For install-and-use instructions (non-contributor path), start with `docs/Getting-Started.md`.
+
 ## Requirements
 
 - Node.js 20+
@@ -130,11 +132,21 @@ Run the terminal UI:
 
 ## Documentation
 
+- [Getting Started](./docs/Getting-Started.md)
+- [CLI Usage](./docs/CLI-Usage.md)
+- [TUI Guide](./docs/Taskforge%20-%20TUI.md)
+
+Contributor and architecture docs:
+
 - [Development Guide](./docs/Development.md)
 - [Architecture Overview](./docs/Architecture.md)
-- [CLI Guide](./apps/cli/README.md)
-- [TUI Guide](./docs/Taskforge%20-%20TUI.md)
 - [MVP Release Readiness](./docs/MVP-Release-Readiness.md)
+
+Docs website (Docusaurus):
+
+```bash
+pnpm docs:dev
+```
 
 ## Project Structure
 

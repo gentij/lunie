@@ -1,3 +1,10 @@
+---
+id: tui-guide
+title: Taskforge TUI Guide
+description: Usage and internals of the Taskforge terminal UI.
+slug: /tui
+---
+
 # Taskforge TUI Guide
 
 This document covers the current Taskforge TUI user workflow and developer architecture.

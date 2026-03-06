@@ -1,3 +1,10 @@
+---
+id: workflow-engine-mental-model
+title: Workflow Engine Mental Model
+description: Core entities and execution model of the Taskforge workflow engine.
+slug: /workflow-engine
+---
+
 # Taskforge – Workflow Engine Mental Model
 
 This document describes the mental model, core entities, and relationships

@@ -1,6 +1,15 @@
+---
+id: development-guide
+title: Development Guide
+description: Local development setup for server, worker, CLI, and TUI.
+slug: /development
+---
+
 # Development Guide
 
 This guide covers local development for Taskforge (server, worker, CLI, and TUI).
+
+Use this page when contributing to Taskforge itself. If you only want to install and run Taskforge, start with `docs/Getting-Started.md`.
 
 ## Prerequisites
 
@@ -185,6 +194,15 @@ pnpm -C apps/worker format:check
 pnpm -C apps/worker format
 ```
 
+## Documentation Site
+
+Taskforge docs are served by Docusaurus from `apps/docs`, using markdown source files in `docs/`.
+
+```bash
+pnpm docs:dev
+pnpm docs:build
+```
+
 ## Environment Variable Reference
 
 Taskforge server variables (from runtime validation):
@@ -241,6 +259,8 @@ pnpm -C apps/worker build
 
 ## Related Docs
 
+- [Getting Started](./Getting-Started.md)
+- [CLI Usage](./CLI-Usage.md)
 - [Architecture Overview](./Architecture.md)
 - [Taskforge TUI Guide](./Taskforge%20-%20TUI.md)
 - [Workflow Engine Concepts](./Taskforge%20-%20Workflow%20Engine.md)

@@ -1,3 +1,10 @@
+---
+id: workflow-definitions
+title: Workflow Definitions
+description: JSON schema and rules for Taskforge workflow definitions.
+slug: /workflow-definitions
+---
+
 # Taskforge - Workflow Definitions
 
 This document describes the JSON format used for Taskforge workflow definitions.

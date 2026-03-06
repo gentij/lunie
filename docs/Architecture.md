@@ -1,3 +1,10 @@
+---
+id: architecture-overview
+title: Architecture Overview
+description: System architecture for Taskforge server, worker, CLI, and data stores.
+slug: /architecture
+---
+
 # Architecture Overview
 
 Taskforge is a self-hosted workflow automation system built as a monorepo.
@@ -95,6 +102,8 @@ Optional:
 
 ## Related Documentation
 
+- Getting started: `docs/Getting-Started.md`
+- CLI usage: `docs/CLI-Usage.md`
 - Development setup: `docs/Development.md`
 - CLI commands: `apps/cli/README.md`
 - TUI usage and internals: `docs/Taskforge - TUI.md`
