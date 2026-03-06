@@ -2,6 +2,8 @@
 
 Taskforge is a self-hosted workflow automation engine for technical users who want local control, API-first automation, and inspectable execution history.
 
+Documentation website: https://gentij.github.io/taskforge
+
 ## MVP Status
 
 Taskforge currently ships:
