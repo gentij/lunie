@@ -132,6 +132,44 @@ Sample `definition.json`:
 }
 ```
 
+Sample with run notifications:
+
+```json
+{
+  "input": {
+    "shouldPass": true
+  },
+  "notifications": [
+    {
+      "provider": "discord",
+      "webhook": "{{secret.DISCORD_WEBHOOK_URL}}",
+      "on": ["FAILED"]
+    },
+    {
+      "provider": "slack",
+      "webhook": "{{secret.SLACK_WEBHOOK_URL}}",
+      "on": ["SUCCEEDED", "FAILED"]
+    }
+  ],
+  "steps": [
+    {
+      "key": "gate",
+      "type": "condition",
+      "request": {
+        "expr": "input.shouldPass",
+        "assert": true
+      }
+    }
+  ]
+}
+```
+
+Notes:
+
+- `webhook` accepts absolute `http(s)` URLs or `{{secret.NAME}}` references.
+- Notifications are evaluated on final run status (`SUCCEEDED`/`FAILED`).
+- Delivery is best-effort and does not change workflow run status.
+
 ## Workflow Versions
 
 ```bash

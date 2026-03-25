@@ -15,20 +15,60 @@ Taskforge stores a workflow definition inside a **WorkflowVersion** (immutable s
 
 ```json
 {
-  "definition": {
-    "input": {},
-    "steps": []
-  }
+  "input": {},
+  "notifications": [],
+  "steps": []
 }
 ```
 
-- `definition.input`: static defaults for workflow input.
-- `definition.steps`: ordered list of step definitions.
+- `input`: static defaults for workflow input.
+- `notifications` (optional): run-completion notifications.
+- `steps`: ordered list of step definitions.
 
 At runtime, a run’s input is a merge of:
 - trigger input (manual/webhook payload)
-- `definition.input`
+- `input`
 - `step.input` (per-step constants)
+
+## Run Notifications (MVP)
+
+Taskforge can send workflow run completion notifications directly from a workflow definition.
+
+Supported providers:
+
+- `discord`
+- `slack`
+
+Supported events:
+
+- `SUCCEEDED`
+- `FAILED`
+
+Notification shape:
+
+```json
+{
+  "notifications": [
+    {
+      "provider": "discord",
+      "webhook": "{{secret.DISCORD_WEBHOOK_URL}}",
+      "on": ["FAILED"]
+    },
+    {
+      "provider": "slack",
+      "webhook": "{{secret.SLACK_WEBHOOK_URL}}",
+      "on": ["SUCCEEDED", "FAILED"]
+    }
+  ]
+}
+```
+
+Rules:
+
+- `webhook` must be an absolute `http(s)` URL or `{{secret.NAME}}`.
+- Notifications are evaluated per workflow version.
+- Delivery is best-effort: notification failures do not change run status.
+- Discord notifications are sent as embeds; Slack notifications use text payloads.
 
 ## Step Keys (v1 Rule)
 
@@ -174,45 +214,50 @@ Malformed/missing expressions are treated as falsy; `assert` determines whether 
 
 ```json
 {
-  "definition": {
-    "input": {
-      "apiUrl": "https://jsonplaceholder.typicode.com"
+  "input": {
+    "apiUrl": "https://jsonplaceholder.typicode.com"
+  },
+  "notifications": [
+    {
+      "provider": "discord",
+      "webhook": "{{secret.DISCORD_WEBHOOK_URL}}",
+      "on": ["SUCCEEDED", "FAILED"]
+    }
+  ],
+  "steps": [
+    {
+      "key": "fetch_posts",
+      "type": "http",
+      "request": {
+        "method": "GET",
+        "url": "{{input.apiUrl}}/posts"
+      }
     },
-    "steps": [
-      {
-        "key": "fetch_posts",
-        "type": "http",
-        "request": {
-          "method": "GET",
-          "url": "{{input.apiUrl}}/posts"
-        }
-      },
-      {
-        "key": "assert_has_first_post",
-        "type": "condition",
-        "dependsOn": ["fetch_posts"],
-        "request": {
-          "expr": "steps.fetch_posts[0] != null",
-          "message": "Expected at least one post"
-        }
-      },
-      {
-        "key": "send",
-        "type": "http",
-        "dependsOn": ["assert_has_first_post"],
-        "request": {
-          "method": "POST",
-          "url": "{{secret.discordWebhook}}",
-          "headers": {
-            "Content-Type": "application/json"
-          },
-          "body": {
-            "content": "Posts ok. First title: {{steps.fetch_posts.output.0.title}}"
-          }
+    {
+      "key": "assert_has_first_post",
+      "type": "condition",
+      "dependsOn": ["fetch_posts"],
+      "request": {
+        "expr": "steps.fetch_posts[0] != null",
+        "message": "Expected at least one post"
+      }
+    },
+    {
+      "key": "send",
+      "type": "http",
+      "dependsOn": ["assert_has_first_post"],
+      "request": {
+        "method": "POST",
+        "url": "{{secret.discordWebhook}}",
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "content": "Posts ok. First title: {{steps.fetch_posts.output.0.title}}"
         }
       }
-    ]
-  }
+    }
+  ]
 }
 ```
 
@@ -220,61 +265,59 @@ Malformed/missing expressions are treated as falsy; `assert` determines whether 
 
 ```json
 {
-  "definition": {
-    "input": {
-      "apiUrl": "https://jsonplaceholder.typicode.com"
+  "input": {
+    "apiUrl": "https://jsonplaceholder.typicode.com"
+  },
+  "steps": [
+    {
+      "key": "fetch_posts",
+      "type": "http",
+      "request": {
+        "method": "GET",
+        "url": "{{input.apiUrl}}/posts"
+      }
     },
-    "steps": [
-      {
-        "key": "fetch_posts",
-        "type": "http",
-        "request": {
-          "method": "GET",
-          "url": "{{input.apiUrl}}/posts"
-        }
-      },
-      {
-        "key": "build_embed",
-        "type": "transform",
-        "dependsOn": ["fetch_posts"],
-        "request": {
-          "source": {
-            "posts": "{{steps.fetch_posts.output}}"
-          },
-          "output": {
-            "title": "Fetch Complete",
-            "description": "Fetched posts",
-            "fields": [
-              {
-                "name": "Posts",
-                "value": { "$jmes": "to_string(length(source.posts))" },
-                "inline": true
-              },
-              {
-                "name": "First Title",
-                "value": { "$jmes": "source.posts[0].title" },
-                "inline": false
-              }
-            ],
-            "color": 5814783
-          }
-        }
-      },
-      {
-        "key": "send",
-        "type": "http",
-        "dependsOn": ["build_embed"],
-        "request": {
-          "method": "POST",
-          "url": "{{secret.discordWebhook}}",
-          "headers": { "Content-Type": "application/json" },
-          "body": {
-            "embeds": ["{{steps.build_embed.output}}"]
-          }
+    {
+      "key": "build_embed",
+      "type": "transform",
+      "dependsOn": ["fetch_posts"],
+      "request": {
+        "source": {
+          "posts": "{{steps.fetch_posts.output}}"
+        },
+        "output": {
+          "title": "Fetch Complete",
+          "description": "Fetched posts",
+          "fields": [
+            {
+              "name": "Posts",
+              "value": { "$jmes": "to_string(length(source.posts))" },
+              "inline": true
+            },
+            {
+              "name": "First Title",
+              "value": { "$jmes": "source.posts[0].title" },
+              "inline": false
+            }
+          ],
+          "color": 5814783
         }
       }
-    ]
-  }
+    },
+    {
+      "key": "send",
+      "type": "http",
+      "dependsOn": ["build_embed"],
+      "request": {
+        "method": "POST",
+        "url": "{{secret.discordWebhook}}",
+        "headers": { "Content-Type": "application/json" },
+        "body": {
+          "embeds": ["{{steps.build_embed.output}}"]
+        }
+      }
+    }
+  ]
 }
 ```
 

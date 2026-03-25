@@ -84,6 +84,16 @@ taskforge workflow run <workflow-id> --input input.json
 taskforge workflow delete <workflow-id>
 ```
 
+## Run Notifications
+
+Workflow definitions support optional `notifications` entries for run completion events.
+
+- Providers: `discord`, `slack`
+- Events: `SUCCEEDED`, `FAILED`
+- `webhook` can be absolute `http(s)` or `{{secret.NAME}}`
+
+Use `taskforge workflow create` or `taskforge workflow version create` with a definition that includes `notifications`.
+
 ## Triggers
 
 ```bash
