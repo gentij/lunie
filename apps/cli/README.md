@@ -47,6 +47,34 @@ taskforge step list <workflow-id> <run-id>
 
 `NO_COLOR=1` disables color output as well.
 
+## Pagination and Sorting
+
+List commands support pagination and server-side sorting.
+
+Common flags:
+
+- `--page` (default: `1`)
+- `--page-size` (default: `25`)
+- `--sort-by`
+- `--sort-order` (`asc|desc`)
+
+Supported `--sort-by` values:
+
+- `workflow list`: `createdAt|updatedAt`
+- `workflow version list`: `version|createdAt`
+- `trigger list`: `createdAt|updatedAt`
+- `run list`: `createdAt|updatedAt`
+- `step list`: `createdAt|updatedAt`
+- `secret list`: `createdAt|updatedAt`
+
+Examples:
+
+```bash
+taskforge workflow list --page 1 --page-size 25 --sort-by updatedAt --sort-order desc
+taskforge run list <workflow-id> --sort-by createdAt --sort-order asc
+taskforge workflow version list <workflow-id> --sort-by version --sort-order desc
+```
+
 ## Auth
 
 ```bash

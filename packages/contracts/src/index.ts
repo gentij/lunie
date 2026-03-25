@@ -6,6 +6,9 @@ export {
   TransformStepDefinitionSchema,
   ConditionRequestSpecSchema,
   ConditionStepDefinitionSchema,
+  NotificationProviderSchema,
+  NotificationEventSchema,
+  WorkflowNotificationSchema,
   StepDefinitionSchema,
   WorkflowDefinitionSchema,
 } from './workflow-definition';
@@ -17,6 +20,9 @@ export type {
   TransformStepDefinition,
   ConditionRequestSpec,
   ConditionStepDefinition,
+  NotificationProvider,
+  NotificationEvent,
+  WorkflowNotification,
   StepDefinition,
   WorkflowDefinition,
 } from './workflow-definition';

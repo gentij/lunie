@@ -7,7 +7,11 @@ import {
   WorkflowVersionRepository,
   SecretRepository,
 } from '@taskforge/db-access';
-import { StepRunJobPayload } from '@taskforge/contracts';
+import {
+  StepRunJobPayload,
+  type NotificationEvent,
+  type WorkflowNotification,
+} from '@taskforge/contracts';
 import { ExecutorRegistry } from '../executors/executor-registry';
 import { TemplateResolver } from '../utils/template-resolver';
 import { wrapForDb } from '../utils/persisted-json';
@@ -18,6 +22,7 @@ import type Redis from 'ioredis';
 import { REDIS_CLIENT } from '../redis/redis.constants';
 import { checkFixedWindowRateLimit } from '../utils/rate-limit';
 import { WorkerCacheService } from '../cache/worker-cache.service';
+import { RunNotifierService } from '../notifications/run-notifier.service';
 
 interface StepDefinition {
   key: string;
@@ -50,6 +55,7 @@ export class StepRunProcessor extends WorkerHost {
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
     private readonly executorRegistry: ExecutorRegistry,
     private readonly cache: WorkerCacheService,
+    private readonly runNotifier: RunNotifierService,
   ) {
     super();
   }
@@ -186,7 +192,10 @@ export class StepRunProcessor extends WorkerHost {
 
       this.logger.log(`Step ${stepKey} completed successfully (${durationMs}ms)`);
 
-      await this.checkWorkflowCompletion(workflowRunId, stepRunId);
+      await this.checkWorkflowCompletion(
+        workflowRunId,
+        workflowVersionId,
+      );
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'unknown error';
       this.logger.error(`Step ${stepKey} failed: ${errorMessage}`);
@@ -214,7 +223,10 @@ export class StepRunProcessor extends WorkerHost {
         error: errorEnvelope as unknown as object,
       });
 
-      await this.checkWorkflowCompletion(workflowRunId, stepRunId);
+      await this.checkWorkflowCompletion(
+        workflowRunId,
+        workflowVersionId,
+      );
 
       throw error;
     }
@@ -351,7 +363,7 @@ export class StepRunProcessor extends WorkerHost {
 
   private async checkWorkflowCompletion(
     workflowRunId: string,
-    completedStepRunId: string,
+    workflowVersionId: string,
   ): Promise<void> {
     const siblingSteps = await this.stepRunRepository.findManyByWorkflowRun(workflowRunId);
 
@@ -361,12 +373,79 @@ export class StepRunProcessor extends WorkerHost {
     const hasFailure = siblingSteps.some((s) => s.status === 'FAILED');
     const finalStatus = hasFailure ? 'FAILED' : 'SUCCEEDED';
 
-    await this.workflowRunRepository.update(workflowRunId, {
-      status: finalStatus,
-      finishedAt: new Date(),
-    });
+    const finalized = await this.workflowRunRepository.finalizeIfOpen(
+      workflowRunId,
+      finalStatus,
+    );
+
+    if (!finalized) {
+      return;
+    }
+
+    const finalizedRun = await this.workflowRunRepository.findById(workflowRunId);
+    if (!finalizedRun) {
+      this.logger.warn(
+        `WorkflowRun ${workflowRunId} finalized but could not be loaded for notifications`,
+      );
+      return;
+    }
+
+    const workflowVersion = await this.cache.getWorkflowVersion(
+      workflowVersionId,
+      () => this.workflowVersionRepository.findById(workflowVersionId),
+    );
+
+    const notifications = this.extractNotifications(workflowVersion?.definition);
+    if (notifications.length > 0) {
+      await this.runNotifier.notifyRunCompletion({
+        workflowRun: finalizedRun,
+        notifications,
+        finalStatus,
+      });
+    }
 
     this.logger.log(`WorkflowRun ${workflowRunId} completed with status: ${finalStatus}`);
+  }
+
+  private extractNotifications(definition: unknown): WorkflowNotification[] {
+    if (!definition || typeof definition !== 'object') return [];
+    const raw = (definition as { notifications?: unknown }).notifications;
+    if (!Array.isArray(raw)) return [];
+
+    const notifications: WorkflowNotification[] = [];
+    for (const item of raw) {
+      if (!item || typeof item !== 'object') continue;
+      const candidate = item as {
+        provider?: unknown;
+        webhook?: unknown;
+        on?: unknown;
+      };
+      if (candidate.provider !== 'slack' && candidate.provider !== 'discord') {
+        continue;
+      }
+      if (typeof candidate.webhook !== 'string' || candidate.webhook.trim() === '') {
+        continue;
+      }
+      if (!Array.isArray(candidate.on) || candidate.on.length === 0) {
+        continue;
+      }
+
+      const on: NotificationEvent[] = [];
+      for (const value of candidate.on) {
+        if (value === 'SUCCEEDED' || value === 'FAILED') {
+          on.push(value);
+        }
+      }
+      if (on.length === 0) continue;
+
+      notifications.push({
+        provider: candidate.provider,
+        webhook: candidate.webhook,
+        on,
+      });
+    }
+
+    return notifications;
   }
 
   private applyHttpOverrides(

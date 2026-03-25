@@ -17,6 +17,7 @@ import { TransformExecutorModule } from './executors/transform/transform-executo
 import { ConditionExecutorModule } from './executors/condition/condition-executor.module';
 import { StepRunProcessor } from './processors/step-run.processor';
 import { WorkerCacheService } from './cache/worker-cache.service';
+import { RunNotifierService } from './notifications/run-notifier.service';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { WorkerCacheService } from './cache/worker-cache.service';
     WorkflowVersionRepository,
     ExecutorRegistry,
     WorkerCacheService,
+    RunNotifierService,
   ],
   exports: [],
 })

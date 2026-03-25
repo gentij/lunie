@@ -69,4 +69,25 @@ export class WorkflowRunRepository {
 
     return result.count > 0;
   }
+
+  async finalizeIfOpen(
+    id: string,
+    status: 'SUCCEEDED' | 'FAILED',
+  ): Promise<boolean> {
+    const result = await this.prisma.workflowRun.updateMany({
+      where: {
+        id,
+        finishedAt: null,
+        status: {
+          in: ['QUEUED', 'RUNNING'],
+        },
+      },
+      data: {
+        status,
+        finishedAt: new Date(),
+      },
+    });
+
+    return result.count > 0;
+  }
 }

@@ -19,6 +19,34 @@ For full command coverage, see `apps/cli/README.md`.
 - `--no-color`: disable colored output
 - `--config`: config file path
 
+## Pagination and Sorting
+
+List commands support pagination and server-side sorting.
+
+Common list flags:
+
+- `--page`
+- `--page-size`
+- `--sort-by`
+- `--sort-order` (`asc|desc`)
+
+Supported `--sort-by` values:
+
+- `workflow list`: `createdAt|updatedAt`
+- `workflow version list`: `version|createdAt`
+- `trigger list`: `createdAt|updatedAt`
+- `run list`: `createdAt|updatedAt`
+- `step list`: `createdAt|updatedAt`
+- `secret list`: `createdAt|updatedAt`
+
+Examples:
+
+```bash
+taskforge workflow list --sort-by updatedAt --sort-order desc
+taskforge run list <workflow-id> --sort-by createdAt --sort-order asc
+taskforge workflow version list <workflow-id> --sort-by version --sort-order desc
+```
+
 ## Stack Commands
 
 Run once:

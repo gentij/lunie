@@ -98,6 +98,34 @@ export const ConditionStepDefinitionSchema = BaseStepDefinitionSchema.extend({
   request: ConditionRequestSpecSchema,
 });
 
+export const NotificationProviderSchema = z.enum(['slack', 'discord']);
+export const NotificationEventSchema = z.enum(['SUCCEEDED', 'FAILED']);
+
+export const WorkflowNotificationSchema = z
+  .object({
+    provider: NotificationProviderSchema,
+    webhook: z
+      .string()
+      .min(1)
+      .refine((value) => {
+        const trimmed = value.trim();
+        if (/^\{\{\s*secret\.[A-Za-z0-9_-]+\s*\}\}$/.test(trimmed)) {
+          return true;
+        }
+        try {
+          const parsed = new URL(trimmed);
+          return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+        } catch {
+          return false;
+        }
+      }, {
+        message:
+          'webhook must be an absolute http(s) URL or {{secret.NAME}} reference',
+      }),
+    on: z.array(NotificationEventSchema).min(1),
+  })
+  .strict();
+
 export const StepDefinitionSchema = z.discriminatedUnion('type', [
   HttpStepDefinitionSchema,
   TransformStepDefinitionSchema,
@@ -106,6 +134,7 @@ export const StepDefinitionSchema = z.discriminatedUnion('type', [
 
 export const WorkflowDefinitionSchema = z.object({
   input: z.record(z.string(), z.unknown()).optional(),
+  notifications: z.array(WorkflowNotificationSchema).optional(),
   steps: z.array(StepDefinitionSchema).default([]),
 });
 
@@ -116,5 +145,8 @@ export type TransformRequestSpec = z.infer<typeof TransformRequestSpecSchema>;
 export type TransformStepDefinition = z.infer<typeof TransformStepDefinitionSchema>;
 export type ConditionRequestSpec = z.infer<typeof ConditionRequestSpecSchema>;
 export type ConditionStepDefinition = z.infer<typeof ConditionStepDefinitionSchema>;
+export type NotificationProvider = z.infer<typeof NotificationProviderSchema>;
+export type NotificationEvent = z.infer<typeof NotificationEventSchema>;
+export type WorkflowNotification = z.infer<typeof WorkflowNotificationSchema>;
 export type StepDefinition = z.infer<typeof StepDefinitionSchema>;
 export type WorkflowDefinition = z.infer<typeof WorkflowDefinitionSchema>;

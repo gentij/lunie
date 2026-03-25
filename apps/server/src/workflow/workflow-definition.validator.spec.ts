@@ -1,5 +1,8 @@
 import type { WorkflowDefinition } from '@taskforge/contracts';
-import { validateWorkflowDefinitionStrict } from './workflow-definition.validator';
+import {
+  getReferencedSecrets,
+  validateWorkflowDefinitionStrict,
+} from './workflow-definition.validator';
 
 describe('validateWorkflowDefinitionStrict', () => {
   it('rejects invalid template roots in step requests', () => {
@@ -69,5 +72,69 @@ describe('validateWorkflowDefinitionStrict', () => {
     );
 
     expect(issues).toEqual([]);
+  });
+
+  it('allows notification webhook secret template', () => {
+    const definition = {
+      notifications: [
+        {
+          provider: 'discord',
+          webhook: '{{secret.DISCORD_WEBHOOK_URL}}',
+          on: ['FAILED'],
+        },
+      ],
+      steps: [],
+    };
+
+    const issues = validateWorkflowDefinitionStrict(
+      definition as WorkflowDefinition,
+    );
+
+    expect(issues).toEqual([]);
+  });
+
+  it('rejects invalid notification webhook values', () => {
+    const definition = {
+      notifications: [
+        {
+          provider: 'slack',
+          webhook: 'not-a-url',
+          on: ['SUCCEEDED'],
+        },
+      ],
+      steps: [],
+    };
+
+    const issues = validateWorkflowDefinitionStrict(
+      definition as WorkflowDefinition,
+    );
+
+    const issue = issues.find(
+      (item) => item.field === 'notifications[0].webhook',
+    );
+
+    expect(issue).toBeDefined();
+    expect(issue?.message).toContain('notification webhook must be');
+  });
+
+  it('extracts referenced secrets from notifications', () => {
+    const definition = {
+      notifications: [
+        {
+          provider: 'discord',
+          webhook: '{{secret.DISCORD_WEBHOOK_URL}}',
+          on: ['FAILED'],
+        },
+      ],
+      steps: [],
+    };
+
+    const refs = getReferencedSecrets(definition as WorkflowDefinition);
+    expect(refs).toEqual([
+      {
+        name: 'DISCORD_WEBHOOK_URL',
+        field: 'notifications[0].webhook',
+      },
+    ]);
   });
 });

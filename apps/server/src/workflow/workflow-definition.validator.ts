@@ -21,6 +21,11 @@ type StepLike = {
 
 type TransformRequestLike = { output?: unknown };
 type ConditionRequestLike = { expr?: unknown };
+type NotificationLike = {
+  provider: 'slack' | 'discord';
+  webhook: string;
+  on: Array<'SUCCEEDED' | 'FAILED'>;
+};
 
 export function validateWorkflowDefinitionStrict(
   definition: WorkflowDefinition,
@@ -28,6 +33,8 @@ export function validateWorkflowDefinitionStrict(
   const issues: ValidationIssue[] = [];
 
   const steps = (definition.steps ?? []) as unknown as StepLike[];
+  const notifications = (definition.notifications ??
+    []) as unknown as NotificationLike[];
   const workflowInputKeys = new Set(Object.keys(definition.input ?? {}));
 
   const stepKeyCounts = new Map<string, number>();
@@ -99,6 +106,32 @@ export function validateWorkflowDefinitionStrict(
     if (typeof value !== 'string') return;
     validateTemplateRoots(value, path);
   });
+
+  for (let i = 0; i < notifications.length; i++) {
+    const notification = notifications[i];
+    const webhook = String(notification.webhook ?? '').trim();
+    const field = `notifications[${i}].webhook`;
+
+    validateTemplateRoots(webhook, field);
+
+    const isSecretRef = /^\{\{\s*secret\.[A-Za-z0-9_-]+\s*\}\}$/.test(webhook);
+    if (isSecretRef) {
+      continue;
+    }
+
+    try {
+      const parsed = new URL(webhook);
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+        throw new Error('unsupported protocol');
+      }
+    } catch {
+      issues.push({
+        field,
+        message:
+          'notification webhook must be an absolute http(s) URL or {{secret.NAME}}',
+      });
+    }
+  }
 
   for (let i = 0; i < steps.length; i++) {
     const step = steps[i];
@@ -314,6 +347,21 @@ export function getReferencedSecrets(
         refs.push({ name, field: path, stepKey: step.key });
       }
     });
+  }
+
+  const notifications = (definition.notifications ?? []) as Array<{
+    webhook?: unknown;
+  }>;
+  for (let i = 0; i < notifications.length; i++) {
+    const webhook = notifications[i]?.webhook;
+    if (typeof webhook !== 'string') continue;
+    secretPattern.lastIndex = 0;
+    let m: RegExpExecArray | null;
+    while ((m = secretPattern.exec(webhook)) !== null) {
+      const name = m[1];
+      if (!name) continue;
+      refs.push({ name, field: `notifications[${i}].webhook` });
+    }
   }
 
   return refs;
