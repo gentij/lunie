@@ -34,6 +34,7 @@ import {
 } from 'test/workflow/workflow.repository.mock';
 import { createWorkflowFixture } from 'test/workflow/workflow.fixtures';
 import { TriggerRepository, WorkflowRepository } from '@taskforge/db-access';
+import { CryptoService } from 'src/crypto/crypto.service';
 
 describe('Trigger (e2e)', () => {
   let app: NestFastifyApplication;
@@ -55,6 +56,14 @@ describe('Trigger (e2e)', () => {
         {
           provide: WorkflowService,
           useValue: { get: jest.fn() },
+        },
+        {
+          provide: CryptoService,
+          useValue: {
+            generateApiToken: jest.fn(),
+            hashApiToken: jest.fn((value: string) => `hash:${value}`),
+            secureCompare: jest.fn((a: string, b: string) => a === b),
+          },
         },
         { provide: TriggerRepository, useValue: repo },
         { provide: WorkflowRepository, useValue: workflowRepo },
