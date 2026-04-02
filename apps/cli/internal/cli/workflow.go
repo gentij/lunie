@@ -78,8 +78,8 @@ func init() {
 		Args:  cobra.ExactArgs(1),
 		RunE:  workflowRun,
 	}
-	runCmd.Flags().StringVar(&workflowRunInput, "input", "", "Path to input JSON")
-	runCmd.Flags().StringVar(&workflowRunOverrides, "overrides", "", "Path to overrides JSON")
+	runCmd.Flags().StringVar(&workflowRunInput, "input", "", "Path to input JSON (overrides workflow definition input defaults)")
+	runCmd.Flags().StringVar(&workflowRunOverrides, "overrides", "", "Path to HTTP step request overrides JSON")
 
 	workflowCmd.AddCommand(createCmd)
 	workflowCmd.AddCommand(updateCmd)

@@ -92,6 +92,11 @@ taskforge workflow run <workflow-id> --input input.json
 taskforge workflow delete <workflow-id>
 ```
 
+Notes:
+
+- `--input` values override colliding keys from workflow definition `input`.
+- `--overrides` is for per-step HTTP request overrides (`query`/`body`) keyed by step key.
+
 ## Run Notifications
 
 Workflow definitions support optional `notifications` entries for run completion events.

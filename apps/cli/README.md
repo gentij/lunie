@@ -124,6 +124,11 @@ taskforge workflow run <workflow-id> --input input.json --overrides overrides.js
 taskforge workflow validate <workflow-id> --definition definition.json
 ```
 
+Notes:
+
+- `--input` values override colliding keys from workflow definition `input`.
+- `--overrides` applies only to `http` steps and supports request `query`/`body` overrides keyed by step key.
+
 Sample `definition.json`:
 
 ```json

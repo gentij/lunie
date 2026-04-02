@@ -265,6 +265,84 @@ describe('OrchestrationService', () => {
     );
   });
 
+  it('lets manual/webhook input override workflow definition input defaults', async () => {
+    const enqueueStepRun = jest.fn();
+
+    const tx: PrismaTxMock = {
+      trigger: {
+        findFirst: jest.fn().mockResolvedValue({ id: 'tr_manual' }),
+        create: jest.fn(),
+      },
+      event: {
+        create: jest.fn().mockResolvedValue({ id: 'ev_1' }),
+      },
+      workflowRun: {
+        create: jest.fn().mockResolvedValue({ id: 'wfr_1' }),
+        update: jest.fn().mockResolvedValue({ id: 'wfr_1' }),
+      },
+      workflowVersion: {
+        create: jest.fn(),
+        findFirst: jest.fn(),
+        findUniqueOrThrow: jest.fn().mockResolvedValue({
+          definition: {
+            input: {
+              shouldFail: false,
+              source: 'workflow-default',
+            },
+            steps: [],
+          },
+        }),
+      },
+      workflow: {
+        create: jest.fn(),
+        update: jest.fn(),
+      },
+    };
+
+    const prismaMock: PrismaServiceMock = createPrismaServiceMock();
+    prismaMock.$transaction.mockImplementation((cb) => Promise.resolve(cb(tx)));
+
+    const moduleRef = await Test.createTestingModule({
+      providers: [
+        OrchestrationService,
+        {
+          provide: PrismaService,
+          useValue: prismaMock as unknown as PrismaService,
+        },
+        { provide: StepRunQueueService, useValue: { enqueueStepRun } },
+      ],
+    }).compile();
+
+    service = moduleRef.get(OrchestrationService);
+
+    await service.startWorkflow({
+      workflowId: 'wf_1',
+      workflowVersionId: 'wfv_1',
+      eventType: 'MANUAL',
+      input: {
+        shouldFail: true,
+        branch: 'manual-input',
+      },
+    });
+
+    const workflowRunCreate = tx.workflowRun?.create as jest.MockedFunction<
+      (args: {
+        data: {
+          input?: unknown;
+        };
+      }) => unknown
+    >;
+    const workflowRunCreateArgs = workflowRunCreate.mock.calls[0]?.[0];
+    if (!workflowRunCreateArgs)
+      throw new Error('Expected workflowRun.create to be called');
+
+    expect(workflowRunCreateArgs.data.input).toEqual({
+      shouldFail: true,
+      source: 'workflow-default',
+      branch: 'manual-input',
+    });
+  });
+
   it('completes immediately when no steps exist', async () => {
     const enqueueStepRun = jest.fn();
 

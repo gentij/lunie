@@ -94,8 +94,8 @@ export class OrchestrationService {
         const triggerPayload = input ?? {};
 
         const mergedInput = {
-          ...triggerPayload,
           ...workflowInput,
+          ...triggerPayload,
         };
 
         const overridesToPersist = this.pickAndNormalizeOverridesForSteps(

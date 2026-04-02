@@ -26,9 +26,14 @@ Taskforge stores a workflow definition inside a **WorkflowVersion** (immutable s
 - `steps`: ordered list of step definitions.
 
 At runtime, a run’s input is a merge of:
+- `input` (workflow defaults)
 - trigger input (manual/webhook payload)
-- `input`
 - `step.input` (per-step constants)
+
+Precedence (highest to lowest):
+- `step.input`
+- trigger input
+- `definition.input`
 
 ## Run Notifications (MVP)
 
