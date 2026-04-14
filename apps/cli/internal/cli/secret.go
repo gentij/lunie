@@ -130,11 +130,7 @@ func secretCreate(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("missing context")
 	}
 
-	payload := map[string]any{
-		"name":        secretCreateName,
-		"value":       secretCreateValue,
-		"description": secretCreateDescription,
-	}
+	payload := secretCreatePayload(cmd)
 
 	result, err := ctx.Client.CreateSecret(payload)
 	if err != nil {
@@ -142,6 +138,19 @@ func secretCreate(cmd *cobra.Command, args []string) error {
 	}
 
 	return printSecret(ctx, result)
+}
+
+func secretCreatePayload(cmd *cobra.Command) map[string]any {
+	payload := map[string]any{
+		"name":  secretCreateName,
+		"value": secretCreateValue,
+	}
+
+	if cmd.Flags().Changed("description") && secretCreateDescription != "" {
+		payload["description"] = secretCreateDescription
+	}
+
+	return payload
 }
 
 func secretUpdate(cmd *cobra.Command, args []string) error {
