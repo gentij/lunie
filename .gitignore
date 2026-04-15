@@ -35,5 +35,5 @@ Thumbs.db
 *.tmp
 *.swp
 
-/.taskforge/ 
-taskforge
+/.lune/ 
+lune
