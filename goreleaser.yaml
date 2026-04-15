@@ -27,6 +27,7 @@ checksum:
   name_template: "checksums.txt"
 
 release:
+  draft: true
   github:
     owner: gentij
     name: lune
