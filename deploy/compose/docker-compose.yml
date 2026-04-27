@@ -1,28 +1,28 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: lune-postgres
+    container_name: lunie-postgres
     environment:
-      POSTGRES_USER: lune
-      POSTGRES_PASSWORD: lune
-      POSTGRES_DB: lune
+      POSTGRES_USER: lunie
+      POSTGRES_PASSWORD: lunie
+      POSTGRES_DB: lunie
     ports:
       - "5432:5432"
     volumes:
-      - lune_pgdata:/var/lib/postgresql/data
+      - lunie_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U lune -d lune"]
+      test: ["CMD-SHELL", "pg_isready -U lunie -d lunie"]
       interval: 5s
       timeout: 3s
       retries: 10
 
   redis:
     image: redis:7-alpine
-    container_name: lune-redis
+    container_name: lunie-redis
     ports:
       - "6379:6379"
     volumes:
-      - lune_redisdata:/data
+      - lunie_redisdata:/data
     command: ["redis-server", "--appendonly", "yes"]
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -31,5 +31,5 @@ services:
       retries: 10
 
 volumes:
-  lune_pgdata:
-  lune_redisdata:
+  lunie_pgdata:
+  lunie_redisdata:

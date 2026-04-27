@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { TriggerService } from './trigger.service';
-import { TriggerRepository, WorkflowRepository } from '@lune/db-access';
+import { TriggerRepository, WorkflowRepository } from '@lunie/db-access';
 import {
   createTriggerRepositoryMock,
   type TriggerRepositoryMock,
@@ -33,7 +33,7 @@ describe('TriggerService', () => {
     crypto = {
       generateApiToken: jest
         .fn<string, []>()
-        .mockReturnValue('lune_webhook_key'),
+        .mockReturnValue('lunie_webhook_key'),
       hashApiToken: jest
         .fn<string, [string]>()
         .mockImplementation((value: string) => `hash:${value}`),
@@ -199,7 +199,7 @@ describe('TriggerService', () => {
     repo.update.mockResolvedValue(trigger);
 
     await expect(service.rotateWebhookKey('wf_1', 'tr_1')).resolves.toEqual({
-      webhookKey: 'lune_webhook_key',
+      webhookKey: 'lunie_webhook_key',
     });
 
     expect(repo.update).toHaveBeenCalledTimes(1);
@@ -223,7 +223,7 @@ describe('TriggerService', () => {
     expect(updatePatch.config?.source).toBe('github');
     expect(updatePatch.config?.webhookAuth?.mode).toBe('path-key');
     expect(updatePatch.config?.webhookAuth?.keyHash).toBe(
-      'hash:lune_webhook_key',
+      'hash:lunie_webhook_key',
     );
     expect(updatePatch.config?.webhookAuth?.rotatedAt).toEqual(
       expect.any(String),
@@ -251,12 +251,12 @@ describe('TriggerService', () => {
     const trigger = createTriggerFixture({
       type: 'WEBHOOK',
       config: {
-        webhookAuth: { mode: 'path-key', keyHash: 'hash:lune_valid_key' },
+        webhookAuth: { mode: 'path-key', keyHash: 'hash:lunie_valid_key' },
       },
     });
 
     expect(service.hasWebhookKey(trigger)).toBe(true);
-    expect(service.hasValidWebhookKey(trigger, 'lune_valid_key')).toBe(true);
-    expect(service.hasValidWebhookKey(trigger, 'lune_other_key')).toBe(false);
+    expect(service.hasValidWebhookKey(trigger, 'lunie_valid_key')).toBe(true);
+    expect(service.hasValidWebhookKey(trigger, 'lunie_other_key')).toBe(false);
   });
 });

@@ -33,7 +33,7 @@ import {
   type WorkflowRepositoryMock,
 } from 'test/workflow/workflow.repository.mock';
 import { createWorkflowFixture } from 'test/workflow/workflow.fixtures';
-import { TriggerRepository, WorkflowRepository } from '@lune/db-access';
+import { TriggerRepository, WorkflowRepository } from '@lunie/db-access';
 import { CryptoService } from 'src/crypto/crypto.service';
 
 describe('Trigger (e2e)', () => {

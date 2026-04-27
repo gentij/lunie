@@ -15,7 +15,7 @@ import {
   PrismaService,
   SecretRepository,
   WorkflowRepository,
-} from '@lune/db-access';
+} from '@lunie/db-access';
 import { ResponseInterceptor } from 'src/common/http/interceptors/response.interceptor';
 import { AllExceptionsFilter } from 'src/common/http/filters/all-exceptions.filter';
 import { OrchestrationService } from 'src/core/orchestration.service';

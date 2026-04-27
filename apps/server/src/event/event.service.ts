@@ -4,7 +4,7 @@ import {
   WorkflowRepository,
   TriggerRepository,
   EventRepository,
-} from '@lune/db-access';
+} from '@lunie/db-access';
 import { ErrorDefinitions } from 'src/common/http/errors/error-codes';
 import { AppError } from 'src/common/http/errors/app-error';
 import { buildPaginationMeta } from 'src/common/pagination/pagination';

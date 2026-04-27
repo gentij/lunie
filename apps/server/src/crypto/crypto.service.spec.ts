@@ -10,12 +10,12 @@ describe('CryptoService', () => {
     service = new CryptoService(config);
   });
 
-  it('generateApiToken() returns token with lune_ prefix and hex payload', () => {
+  it('generateApiToken() returns token with lunie_ prefix and hex payload', () => {
     const token = service.generateApiToken();
 
-    expect(token.startsWith('lune_')).toBe(true);
+    expect(token.startsWith('lunie_')).toBe(true);
 
-    const payload = token.slice('lune_'.length);
+    const payload = token.slice('lunie_'.length);
     expect(payload).toMatch(/^[0-9a-f]+$/);
     expect(payload.length).toBe(64);
   });
@@ -27,10 +27,10 @@ describe('CryptoService', () => {
   });
 
   it('hashApiToken() returns stable sha256 hex digest', () => {
-    const hash = service.hashApiToken('lune_test_token');
+    const hash = service.hashApiToken('lunie_test_token');
     expect(hash).toMatch(/^[0-9a-f]{64}$/);
 
-    const hash2 = service.hashApiToken('lune_test_token');
+    const hash2 = service.hashApiToken('lunie_test_token');
     expect(hash).toBe(hash2);
   });
 });

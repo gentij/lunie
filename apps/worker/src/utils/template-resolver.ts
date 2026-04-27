@@ -227,13 +227,13 @@ export class TemplateResolver {
 
 function unwrapEnvelope(value: unknown): unknown {
   if (!value || typeof value !== 'object') return value;
-  if (!('data' in (value as any)) || !('_lune' in (value as any))) return value;
+  if (!('data' in (value as any)) || !('_lunie' in (value as any))) return value;
   const data = (value as any).data;
   return data;
 }
 
 function unwrapHttpBody(value: unknown): unknown {
   if (!value || typeof value !== 'object') return undefined;
-  if (!('data' in (value as any)) || !('_luneHttp' in (value as any))) return undefined;
+  if (!('data' in (value as any)) || !('_lunieHttp' in (value as any))) return undefined;
   return (value as any).data;
 }

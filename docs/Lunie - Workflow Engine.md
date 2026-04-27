@@ -1,16 +1,16 @@
 ---
 id: workflow-engine-mental-model
 title: Workflow Engine Mental Model
-description: Core entities and execution model of the Lune workflow engine.
+description: Core entities and execution model of the Lunie workflow engine.
 slug: /workflow-engine
 ---
 
-# Lune – Workflow Engine Mental Model
+# Lunie – Workflow Engine Mental Model
 
 This document describes the mental model, core entities, and relationships
-behind Lune’s workflow automation engine.
+behind Lunie’s workflow automation engine.
 
-Lune is a **developer-first, self-hosted workflow automation system**.
+Lunie is a **developer-first, self-hosted workflow automation system**.
 It is designed for technical users who want deterministic, inspectable,
 and reproducible automations.
 
@@ -28,7 +28,7 @@ and reproducible automations.
 
 ## High-level Mental Model
 
-A workflow in Lune is a *program*.
+A workflow in Lunie is a *program*.
 
 - A **Workflow** is the container (the “project”)
 - A **WorkflowVersion** is a frozen snapshot of logic
@@ -163,5 +163,5 @@ Execution record of a single step inside a workflow run.
 
 ## Summary
 
-Lune treats automation as **code with history**.
+Lunie treats automation as **code with history**.
 Everything is explicit, inspectable, and reproducible.

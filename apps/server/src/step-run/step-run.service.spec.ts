@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { StepRunService } from './step-run.service';
-import { StepRunRepository, WorkflowRunRepository } from '@lune/db-access';
+import { StepRunRepository, WorkflowRunRepository } from '@lunie/db-access';
 import {
   createStepRunRepositoryMock,
   type StepRunRepositoryMock,

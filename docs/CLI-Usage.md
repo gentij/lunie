@@ -1,13 +1,13 @@
 ---
 id: cli-usage
 title: CLI Usage
-description: Common Lune CLI commands for day-to-day operations.
+description: Common Lunie CLI commands for day-to-day operations.
 slug: /cli
 ---
 
 # CLI Usage
 
-This page is a practical command reference for running Lune.
+This page is a practical command reference for running Lunie.
 
 For full command coverage, see `apps/cli/README.md`.
 
@@ -42,9 +42,9 @@ Supported `--sort-by` values:
 Examples:
 
 ```bash
-lune workflow list --sort-by updatedAt --sort-order desc
-lune run list <workflow-id> --sort-by createdAt --sort-order asc
-lune workflow version list <workflow-id> --sort-by version --sort-order desc
+lunie workflow list --sort-by updatedAt --sort-order desc
+lunie run list <workflow-id> --sort-by createdAt --sort-order asc
+lunie workflow version list <workflow-id> --sort-by version --sort-order desc
 ```
 
 ## Stack Commands
@@ -52,44 +52,44 @@ lune workflow version list <workflow-id> --sort-by version --sort-order desc
 Run once (external datastores):
 
 ```bash
-lune init \
-  --database-url "postgresql://user:pass@db.example.com:5432/lune" \
+lunie init \
+  --database-url "postgresql://user:pass@db.example.com:5432/lunie" \
   --redis-url "redis://redis.example.com:6379"
 ```
 
 Local bundled Postgres/Redis (optional):
 
 ```bash
-lune init --with-local-datastores
+lunie init --with-local-datastores
 ```
 
 Day-to-day:
 
 ```bash
-lune start
-lune status
-lune logs --follow
-lune stop
+lunie start
+lunie status
+lunie logs --follow
+lunie stop
 ```
 
 ## Auth Commands
 
 ```bash
-lune auth login --token "<LUNE_ADMIN_TOKEN>"
-lune auth whoami
-lune auth status
-lune auth logout
+lunie auth login --token "<LUNIE_ADMIN_TOKEN>"
+lunie auth whoami
+lunie auth status
+lunie auth logout
 ```
 
 ## Workflow Lifecycle
 
 ```bash
-lune workflow create --name "My Workflow" --definition definition.json
-lune workflow list
-lune workflow get <workflow-id>
-lune workflow update <workflow-id> --name "New Name"
-lune workflow run <workflow-id> --input input.json
-lune workflow delete <workflow-id>
+lunie workflow create --name "My Workflow" --definition definition.json
+lunie workflow list
+lunie workflow get <workflow-id>
+lunie workflow update <workflow-id> --name "New Name"
+lunie workflow run <workflow-id> --input input.json
+lunie workflow delete <workflow-id>
 ```
 
 Notes:
@@ -105,18 +105,18 @@ Workflow definitions support optional `notifications` entries for run completion
 - Events: `SUCCEEDED`, `FAILED`
 - `webhook` can be absolute `http(s)` or `{{secret.NAME}}`
 
-Use `lune workflow create` or `lune workflow version create` with a definition that includes `notifications`.
+Use `lunie workflow create` or `lunie workflow version create` with a definition that includes `notifications`.
 
 ## Triggers
 
 ```bash
-lune trigger create <workflow-id> --type CRON --name "Nightly" --config cron.json
-lune trigger create <workflow-id> --type WEBHOOK --name "Inbound"
-lune trigger webhook rotate-key <workflow-id> <trigger-id>
-lune trigger list <workflow-id>
-lune trigger get <workflow-id> <trigger-id>
-lune trigger update <workflow-id> <trigger-id> --is-active=false
-lune trigger delete <workflow-id> <trigger-id>
+lunie trigger create <workflow-id> --type CRON --name "Nightly" --config cron.json
+lunie trigger create <workflow-id> --type WEBHOOK --name "Inbound"
+lunie trigger webhook rotate-key <workflow-id> <trigger-id>
+lunie trigger list <workflow-id>
+lunie trigger get <workflow-id> <trigger-id>
+lunie trigger update <workflow-id> <trigger-id> --is-active=false
+lunie trigger delete <workflow-id> <trigger-id>
 ```
 
 Public webhook ingress path format:
@@ -128,24 +128,24 @@ After rotating a webhook key, call the generated URL directly from your webhook 
 ## Runs and Steps
 
 ```bash
-lune run list <workflow-id>
-lune run get <workflow-id> <run-id>
-lune step list <workflow-id> <run-id>
-lune step get <workflow-id> <run-id> <step-run-id>
+lunie run list <workflow-id>
+lunie run get <workflow-id> <run-id>
+lunie step list <workflow-id> <run-id>
+lunie step get <workflow-id> <run-id> <step-run-id>
 ```
 
 ## Secrets
 
 ```bash
-lune secret create --name API_KEY --value "secret"
-lune secret list
-lune secret get <secret-id>
-lune secret update <secret-id> --description "Rotated"
-lune secret delete <secret-id>
+lunie secret create --name API_KEY --value "secret"
+lunie secret list
+lunie secret get <secret-id>
+lunie secret update <secret-id> --description "Rotated"
+lunie secret delete <secret-id>
 ```
 
 ## TUI
 
 ```bash
-lune tui
+lunie tui
 ```

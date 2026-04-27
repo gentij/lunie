@@ -1,32 +1,32 @@
 ---
 id: getting-started
 title: Getting Started
-description: Install Lune and run your first workflow in minutes.
+description: Install Lunie and run your first workflow in minutes.
 slug: /getting-started
 ---
 
 # Getting Started
 
-This guide is for operators and users who want to install Lune and run workflows.
+This guide is for operators and users who want to install Lunie and run workflows.
 
-If you want to contribute to Lune itself, use `docs/Development.md`.
+If you want to contribute to Lunie itself, use `docs/Development.md`.
 
 ## 10-Minute Path
 
-If `lune` is already installed, this is the fastest path from zero to first run.
+If `lunie` is already installed, this is the fastest path from zero to first run.
 
 ```bash
 # 1) Initialize and start stack (external datastores)
-lune init \
-  --database-url "postgresql://user:pass@db.example.com:5432/lune" \
+lunie init \
+  --database-url "postgresql://user:pass@db.example.com:5432/lunie" \
   --redis-url "redis://redis.example.com:6379"
-lune status
+lunie status
 
 # 2) Verify auth works
-lune auth whoami
+lunie auth whoami
 
 # 3) Create a minimal workflow definition
-cat > /tmp/lune-definition.json <<'JSON'
+cat > /tmp/lunie-definition.json <<'JSON'
 {
   "input": {
     "apiBase": "https://jsonplaceholder.typicode.com"
@@ -45,20 +45,20 @@ cat > /tmp/lune-definition.json <<'JSON'
 JSON
 
 # 4) Create workflow and run it
-lune workflow create --name "First Workflow" --definition /tmp/lune-definition.json
-lune workflow list
+lunie workflow create --name "First Workflow" --definition /tmp/lunie-definition.json
+lunie workflow list
 # copy workflow ID from list output
-lune workflow run <workflow-id>
+lunie workflow run <workflow-id>
 
 # 5) Inspect execution
-lune run list <workflow-id>
-lune step list <workflow-id> <run-id>
+lunie run list <workflow-id>
+lunie step list <workflow-id> <run-id>
 ```
 
 ## What You Need
 
 - Docker + Docker Compose
-- A Lune CLI binary
+- A Lunie CLI binary
 
 ## Install the CLI
 
@@ -67,50 +67,50 @@ Choose one method.
 ### Homebrew
 
 ```bash
-brew tap gentij/lune
-brew install lune
+brew tap gentij/lunie
+brew install lunie
 ```
 
 ### AUR (Arch Linux)
 
 ```bash
-yay -S lune-cli-bin
+yay -S lunie-cli-bin
 ```
 
 ### GitHub Release Binary
 
 Download the matching release artifact from:
 
-- `https://github.com/gentij/lune/releases`
+- `https://github.com/gentij/lunie/releases`
 
-Extract `lune` and put it on your `PATH`.
+Extract `lunie` and put it on your `PATH`.
 
 ## Initialize Stack
 
 ```bash
-lune init \
-  --database-url "postgresql://user:pass@db.example.com:5432/lune" \
+lunie init \
+  --database-url "postgresql://user:pass@db.example.com:5432/lunie" \
   --redis-url "redis://redis.example.com:6379"
 ```
 
-This creates local config and starts the Lune stack (server, worker).
+This creates local config and starts the Lunie stack (server, worker).
 
-If you want Lune to run bundled local Postgres and Redis instead, use:
+If you want Lunie to run bundled local Postgres and Redis instead, use:
 
 ```bash
-lune init --with-local-datastores
+lunie init --with-local-datastores
 ```
 
 Check status:
 
 ```bash
-lune status
+lunie status
 ```
 
 Verify auth:
 
 ```bash
-lune auth whoami
+lunie auth whoami
 ```
 
 ## Run Your First Workflow
@@ -118,7 +118,7 @@ lune auth whoami
 Create a minimal definition:
 
 ```bash
-cat > /tmp/lune-definition.json <<'JSON'
+cat > /tmp/lunie-definition.json <<'JSON'
 {
   "input": {
     "apiBase": "https://jsonplaceholder.typicode.com"
@@ -140,17 +140,17 @@ JSON
 Create and run:
 
 ```bash
-lune workflow create --name "First Workflow" --definition /tmp/lune-definition.json
-lune workflow list
+lunie workflow create --name "First Workflow" --definition /tmp/lunie-definition.json
+lunie workflow list
 # use workflow id from list output
-lune workflow run <workflow-id>
+lunie workflow run <workflow-id>
 ```
 
 Inspect run details:
 
 ```bash
-lune run list <workflow-id>
-lune step list <workflow-id> <run-id>
+lunie run list <workflow-id>
+lunie step list <workflow-id> <run-id>
 ```
 
 ## Optional: Configure Public Webhook Ingress
@@ -158,8 +158,8 @@ lune step list <workflow-id> <run-id>
 Create a webhook trigger and rotate a path key:
 
 ```bash
-lune trigger create <workflow-id> --type WEBHOOK --name "Inbound"
-lune trigger webhook rotate-key <workflow-id> <trigger-id>
+lunie trigger create <workflow-id> --type WEBHOOK --name "Inbound"
+lunie trigger webhook rotate-key <workflow-id> <trigger-id>
 ```
 
 This prints a URL in the format:
@@ -168,18 +168,18 @@ This prints a URL in the format:
 
 Use that URL in your webhook provider. For reverse proxy starters, see:
 
-- `deploy/ingress/nginx.lune.conf.example`
+- `deploy/ingress/nginx.lunie.conf.example`
 - `deploy/ingress/Caddyfile.example`
 
 ## Optional: Open the TUI
 
 ```bash
-lune tui
+lunie tui
 ```
 
 ## Next Steps
 
 - [CLI Usage](./CLI-Usage.md)
-- [Workflow Definitions](./Lune%20-%20Workflow%20Definitions.md)
-- [TUI Guide](./Lune%20-%20TUI.md)
+- [Workflow Definitions](./Lunie%20-%20Workflow%20Definitions.md)
+- [TUI Guide](./Lunie%20-%20TUI.md)
 - Full CLI reference: `apps/cli/README.md`

@@ -48,7 +48,7 @@ describe('AuthBootstrapService', () => {
   });
 
   afterEach(() => {
-    delete process.env.LUNE_ADMIN_TOKEN;
+    delete process.env.LUNIE_ADMIN_TOKEN;
   });
 
   it('skips bootstrap if an active token already exists', async () => {
@@ -67,12 +67,12 @@ describe('AuthBootstrapService', () => {
     apiTokenServiceMock.hasAnyActiveToken.mockResolvedValue(false);
     cryptoServiceMock.hashApiToken.mockReturnValue('hashed_token_abc');
 
-    process.env.LUNE_ADMIN_TOKEN = 'lune_raw_token_123';
+    process.env.LUNIE_ADMIN_TOKEN = 'lunie_raw_token_123';
 
     await service.onModuleInit();
 
     expect(cryptoServiceMock.hashApiToken).toHaveBeenCalledWith(
-      'lune_raw_token_123',
+      'lunie_raw_token_123',
     );
     expect(apiTokenServiceMock.createAdminToken).toHaveBeenCalledWith({
       name: 'initial-admin',

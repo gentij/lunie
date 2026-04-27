@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
 
-import { PrismaService } from '@lune/db-access';
+import { PrismaService } from '@lunie/db-access';
 import { Prisma } from '@prisma/client';
 import { StepRunQueueService } from 'src/queue/step-run-queue.service';
 import { OrchestrationService } from './orchestration.service';

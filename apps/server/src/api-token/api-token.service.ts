@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ApiTokenRepository } from '@lune/db-access';
+import { ApiTokenRepository } from '@lunie/db-access';
 import { ApiToken } from '@prisma/client';
 import { AppError } from 'src/common/http/errors/app-error';
 import { ErrorDefinitions } from 'src/common/http/errors/error-codes';

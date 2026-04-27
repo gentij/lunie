@@ -1,5 +1,5 @@
 {
-  "name": "@lune/db-access",
+  "name": "@lunie/db-access",
   "version": "0.0.1",
   "private": true,
   "main": "./dist/index.js",

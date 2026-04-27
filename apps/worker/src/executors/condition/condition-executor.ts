@@ -78,7 +78,7 @@ function unwrapStepBodies(stepResponses: Record<string, unknown>): Record<string
     if (value && typeof value === 'object' && 'body' in (value as any)) {
       const body = (value as any).body;
       // Unwrap HttpExecutor body wrapper if present.
-      if (body && typeof body === 'object' && '_luneHttp' in body && 'data' in body) {
+      if (body && typeof body === 'object' && '_lunieHttp' in body && 'data' in body) {
         out[key] = body.data;
       } else {
         out[key] = body;

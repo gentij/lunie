@@ -1,4 +1,4 @@
-module github.com/gentij/lune/apps/cli
+module github.com/gentij/lunie/apps/cli
 
 go 1.25.0
 

@@ -7,8 +7,8 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/gentij/lune/apps/cli/internal/api"
-	"github.com/gentij/lune/apps/cli/internal/tui/data"
+	"github.com/gentij/lunie/apps/cli/internal/api"
+	"github.com/gentij/lunie/apps/cli/internal/tui/data"
 )
 
 const apiPageSize = 100

@@ -19,7 +19,7 @@ const sidebars: SidebarsConfig = {
         {
           type: 'link',
           label: 'CLI Guide (Repository)',
-          href: 'https://github.com/gentij/lune/blob/main/apps/cli/README.md',
+          href: 'https://github.com/gentij/lunie/blob/main/apps/cli/README.md',
         },
       ],
     },

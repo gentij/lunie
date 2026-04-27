@@ -1,22 +1,22 @@
 ---
 id: tui-guide
-title: Lune TUI Guide
-description: Usage and internals of the Lune terminal UI.
+title: Lunie TUI Guide
+description: Usage and internals of the Lunie terminal UI.
 slug: /tui
 ---
 
-# Lune TUI Guide
+# Lunie TUI Guide
 
-This document covers the current Lune TUI user workflow and developer architecture.
+This document covers the current Lunie TUI user workflow and developer architecture.
 
 It is intended for:
 
-- Operators who run `lune tui` day to day
+- Operators who run `lunie tui` day to day
 - Contributors extending screens, actions, and themes
 
 ## What the TUI Is
 
-The TUI is a keyboard-first interface over the Lune API, built with Bubble Tea.
+The TUI is a keyboard-first interface over the Lunie API, built with Bubble Tea.
 
 It provides:
 
@@ -31,7 +31,7 @@ It provides:
 From the CLI:
 
 ```bash
-lune tui
+lunie tui
 ```
 
 The command lives in `apps/cli/internal/cli/tui.go` and starts the Bubble Tea program in alt-screen mode.
@@ -47,7 +47,7 @@ Config shape (`apps/cli/internal/config/config.go`):
 - `profile` (optional)
 - `theme` (optional)
 
-Default config path is OS-specific (via `os.UserConfigDir`), typically under `lune/config.json`.
+Default config path is OS-specific (via `os.UserConfigDir`), typically under `lunie/config.json`.
 
 ## Layout and Focus Model
 
@@ -350,7 +350,7 @@ Theme registry and style mapping:
 
 Available themes:
 
-- lune
+- lunie
 - dracula
 - one-dark-pro
 - rose-pine-moon
@@ -384,7 +384,7 @@ Theme can be changed:
 ### Context text readability issues (theme-specific)
 
 - Switch theme from palette to compare.
-- If needed, set a safer theme in config (`lune`, `nord`, `one-dark-pro`).
+- If needed, set a safer theme in config (`lunie`, `nord`, `one-dark-pro`).
 
 ### Weird ANSI artifacts in table rows
 
@@ -393,7 +393,7 @@ Theme can be changed:
 
 ```bash
 cd apps/cli
-go build -o ../../lune ./cmd/lune
+go build -o ../../lunie ./cmd/lunie
 ```
 
 ## Developer Architecture
@@ -440,5 +440,5 @@ Data loading pipeline:
 ```bash
 cd apps/cli
 go test ./...
-go build -o ../../lune ./cmd/lune
+go build -o ../../lunie ./cmd/lunie
 ```

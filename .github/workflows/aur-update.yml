@@ -34,9 +34,9 @@ jobs:
         run: |
           set -euo pipefail
           TAG="${{ steps.tag.outputs.tag }}"
-          URL="https://github.com/gentij/lune/releases/download/${TAG}/lune_linux_amd64.tar.gz"
+          URL="https://github.com/gentij/lunie/releases/download/${TAG}/lunie_linux_amd64.tar.gz"
           for attempt in $(seq 1 12); do
-            if curl -fL "$URL" -o lune_linux_amd64.tar.gz; then
+            if curl -fL "$URL" -o lunie_linux_amd64.tar.gz; then
               break
             fi
             if [ "$attempt" -eq 12 ]; then
@@ -46,7 +46,7 @@ jobs:
             echo "Release asset not available yet, retrying in 10s (attempt ${attempt}/12)"
             sleep 10
           done
-          echo "sha256=$(sha256sum lune_linux_amd64.tar.gz | awk '{print $1}')" >> $GITHUB_OUTPUT
+          echo "sha256=$(sha256sum lunie_linux_amd64.tar.gz | awk '{print $1}')" >> $GITHUB_OUTPUT
         id: checksum
 
       - name: Set up SSH
@@ -60,7 +60,7 @@ jobs:
       - name: Clone AUR repo
         run: |
           set -euo pipefail
-          GIT_SSH_COMMAND="ssh -i ~/.ssh/aur" git clone ssh://aur@aur.archlinux.org/lune-cli-bin.git aur
+          GIT_SSH_COMMAND="ssh -i ~/.ssh/aur" git clone ssh://aur@aur.archlinux.org/lunie-cli-bin.git aur
 
       - name: Update PKGBUILD and .SRCINFO
         run: |
@@ -71,13 +71,13 @@ jobs:
           cd aur
 
           sed -i "s/^pkgver=.*/pkgver=${VERSION}/" PKGBUILD
-          sed -i "s#^source=.*#source=(\"https://github.com/gentij/lune/releases/download/v${VERSION}/lune_linux_amd64.tar.gz\")#" PKGBUILD
+          sed -i "s#^source=.*#source=(\"https://github.com/gentij/lunie/releases/download/v${VERSION}/lunie_linux_amd64.tar.gz\")#" PKGBUILD
           sed -i "s/^sha256sums=.*/sha256sums=('${SHA}')/" PKGBUILD
 
           docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$(pwd)":/repo archlinux:base-devel /bin/sh -c "cd /repo && makepkg --printsrcinfo > .SRCINFO"
 
-          git config user.name "lune-ci"
-          git config user.email "ci@lune.dev"
+          git config user.name "lunie-ci"
+          git config user.email "ci@lunie.dev"
           git add PKGBUILD .SRCINFO
           git commit -m "Release ${VERSION}" || exit 0
           GIT_SSH_COMMAND="ssh -i ~/.ssh/aur" git push

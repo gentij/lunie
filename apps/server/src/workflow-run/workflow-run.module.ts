@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { WorkflowModule } from 'src/workflow/workflow.module';
 import { WorkflowRunController } from './workflow-run.controller';
-import { WorkflowRunRepository } from '@lune/db-access';
+import { WorkflowRunRepository } from '@lunie/db-access';
 import { WorkflowRunService } from './workflow-run.service';
 
 @Module({

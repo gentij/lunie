@@ -1,4 +1,4 @@
-# Lune vX.Y.Z
+# Lunie vX.Y.Z
 
 ## Overview
 
@@ -23,19 +23,19 @@ Keep this to the most important changes people should notice first.
 ### Homebrew
 
 ```bash
-brew tap gentij/lune
-brew install lune
+brew tap gentij/lunie
+brew install lunie
 ```
 
 ### AUR
 
 ```bash
-yay -S lune-cli-bin
+yay -S lunie-cli-bin
 ```
 
 ### GitHub Release Binary
 
-Download the correct archive for your platform from the release assets and place `lune` on your `PATH`.
+Download the correct archive for your platform from the release assets and place `lunie` on your `PATH`.
 
 ## Upgrade Notes
 
@@ -44,6 +44,6 @@ Download the correct archive for your platform from the release assets and place
 
 ## Docs
 
-- https://gentij.github.io/lune
+- https://gentij.github.io/lunie
 - `docs/Getting-Started.md`
 - `docs/CLI-Usage.md`

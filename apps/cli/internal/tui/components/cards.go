@@ -2,7 +2,7 @@ package components
 
 import (
 	"github.com/charmbracelet/lipgloss"
-	"github.com/gentij/lune/apps/cli/internal/tui/styles"
+	"github.com/gentij/lunie/apps/cli/internal/tui/styles"
 )
 
 type StatCard struct {

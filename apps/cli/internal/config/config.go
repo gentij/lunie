@@ -20,7 +20,7 @@ func DefaultConfigPath() string {
 		return "config.json"
 	}
 
-	return filepath.Join(dir, "lune", "config.json")
+	return filepath.Join(dir, "lunie", "config.json")
 }
 
 func ResolvePath(path string) string {

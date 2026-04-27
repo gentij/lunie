@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
 import type { Trigger, Workflow } from '@prisma/client';
-import { PrismaService } from '@lune/db-access';
+import { PrismaService } from '@lunie/db-access';
 import { OrchestrationService } from 'src/core/orchestration.service';
 import { CronTriggerConfigSchema } from './cron-trigger.types';
 import { parseExpression } from 'cron-parser';

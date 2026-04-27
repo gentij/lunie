@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { CryptoModule } from 'src/crypto/crypto.module';
 import { SecretController } from './secret.controller';
-import { SecretRepository } from '@lune/db-access';
+import { SecretRepository } from '@lunie/db-access';
 import { SecretService } from './secret.service';
 
 @Module({

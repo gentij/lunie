@@ -1,15 +1,15 @@
 import { DocumentBuilder } from '@nestjs/swagger';
 
 export const config = new DocumentBuilder()
-  .setTitle('Lune')
-  .setDescription('The Lune API description')
-  .addTag('Lune')
+  .setTitle('Lunie')
+  .setDescription('The Lunie API description')
+  .addTag('Lunie')
   .addBearerAuth(
     {
       type: 'http',
       scheme: 'bearer',
       bearerFormat: 'API Token',
-      description: 'Paste your Lune API token here',
+      description: 'Paste your Lunie API token here',
     },
     'bearer', // <- name of the security scheme
   )

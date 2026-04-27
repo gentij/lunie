@@ -1,40 +1,40 @@
-# Lune CLI
+# Lunie CLI
 
-The Lune CLI lets you manage workflows, triggers, runs, steps, and secrets from the terminal.
+The Lunie CLI lets you manage workflows, triggers, runs, steps, and secrets from the terminal.
 
-For self-hosted setup, run `lune init` first to provision `~/.lune/` and stack config.
+For self-hosted setup, run `lunie init` first to provision `~/.lunie/` and stack config.
 
 ## Quickstart
 
 ```bash
-lune auth login --token "<LUNE_ADMIN_TOKEN>"
-lune workflow list
+lunie auth login --token "<LUNIE_ADMIN_TOKEN>"
+lunie workflow list
 ```
 
 If your API is not on the default port, pass `--server`:
 
 ```bash
-lune --server http://localhost:3100/v1/api auth whoami
+lunie --server http://localhost:3100/v1/api auth whoami
 ```
 
 Create a workflow from a definition file:
 
 ```bash
-lune workflow create --name "My Workflow" --definition definition.json
+lunie workflow create --name "My Workflow" --definition definition.json
 ```
 
 Create a CRON trigger:
 
 ```bash
-lune trigger create <workflow-id> --type CRON --name "Nightly" --config cron.json
+lunie trigger create <workflow-id> --type CRON --name "Nightly" --config cron.json
 ```
 
 Run a workflow and check runs/steps:
 
 ```bash
-lune workflow run <workflow-id> --input input.json
-lune run list <workflow-id>
-lune step list <workflow-id> <run-id>
+lunie workflow run <workflow-id> --input input.json
+lunie run list <workflow-id>
+lunie step list <workflow-id> <run-id>
 ```
 
 ## Global Flags
@@ -70,58 +70,58 @@ Supported `--sort-by` values:
 Examples:
 
 ```bash
-lune workflow list --page 1 --page-size 25 --sort-by updatedAt --sort-order desc
-lune run list <workflow-id> --sort-by createdAt --sort-order asc
-lune workflow version list <workflow-id> --sort-by version --sort-order desc
+lunie workflow list --page 1 --page-size 25 --sort-by updatedAt --sort-order desc
+lunie run list <workflow-id> --sort-by createdAt --sort-order asc
+lunie workflow version list <workflow-id> --sort-by version --sort-order desc
 ```
 
 ## Auth
 
 ```bash
-lune auth login
-lune auth status
-lune auth whoami
-lune auth logout
+lunie auth login
+lunie auth status
+lunie auth whoami
+lunie auth logout
 ```
 
 ## Stack
 
-`lune init` must be run once before using stack commands.
+`lunie init` must be run once before using stack commands.
 
 By default, init expects external Postgres and Redis URLs:
 
 ```bash
-lune init \
-  --database-url "postgresql://user:pass@db.example.com:5432/lune" \
+lunie init \
+  --database-url "postgresql://user:pass@db.example.com:5432/lunie" \
   --redis-url "redis://redis.example.com:6379"
 ```
 
 To run bundled local Postgres/Redis containers instead:
 
 ```bash
-lune init --with-local-datastores
+lunie init --with-local-datastores
 ```
 
 ```bash
-lune start
-lune start server worker
-lune start --foreground
-lune status
-lune logs --follow
-lune stop
+lunie start
+lunie start server worker
+lunie start --foreground
+lunie status
+lunie logs --follow
+lunie stop
 ```
 
 ## Workflows
 
 ```bash
-lune workflow list
-lune workflow get <workflow-id>
-lune workflow create --name "My Workflow" --definition definition.json
-lune workflow update <workflow-id> --name "New Name"
-lune workflow update <workflow-id> --is-active=false
-lune workflow delete <workflow-id>
-lune workflow run <workflow-id> --input input.json --overrides overrides.json
-lune workflow validate <workflow-id> --definition definition.json
+lunie workflow list
+lunie workflow get <workflow-id>
+lunie workflow create --name "My Workflow" --definition definition.json
+lunie workflow update <workflow-id> --name "New Name"
+lunie workflow update <workflow-id> --is-active=false
+lunie workflow delete <workflow-id>
+lunie workflow run <workflow-id> --input input.json --overrides overrides.json
+lunie workflow validate <workflow-id> --definition definition.json
 ```
 
 Notes:
@@ -191,21 +191,21 @@ Notes:
 ## Workflow Versions
 
 ```bash
-lune workflow version list <workflow-id>
-lune workflow version get <workflow-id> <version>
-lune workflow version create <workflow-id> --definition definition.json
+lunie workflow version list <workflow-id>
+lunie workflow version get <workflow-id> <version>
+lunie workflow version create <workflow-id> --definition definition.json
 ```
 
 ## Triggers
 
 ```bash
-lune trigger list <workflow-id>
-lune trigger get <workflow-id> <trigger-id>
-lune trigger create <workflow-id> --type CRON --name "Nightly" --config cron.json
-lune trigger create <workflow-id> --type WEBHOOK --name "Inbound"
-lune trigger webhook rotate-key <workflow-id> <trigger-id>
-lune trigger update <workflow-id> <trigger-id> --is-active=false
-lune trigger delete <workflow-id> <trigger-id>
+lunie trigger list <workflow-id>
+lunie trigger get <workflow-id> <trigger-id>
+lunie trigger create <workflow-id> --type CRON --name "Nightly" --config cron.json
+lunie trigger create <workflow-id> --type WEBHOOK --name "Inbound"
+lunie trigger webhook rotate-key <workflow-id> <trigger-id>
+lunie trigger update <workflow-id> <trigger-id> --is-active=false
+lunie trigger delete <workflow-id> <trigger-id>
 ```
 
 Sample `cron.json`:
@@ -220,25 +220,25 @@ Sample `cron.json`:
 ## Runs
 
 ```bash
-lune run list <workflow-id>
-lune run get <workflow-id> <run-id>
+lunie run list <workflow-id>
+lunie run get <workflow-id> <run-id>
 ```
 
 ## Steps
 
 ```bash
-lune step list <workflow-id> <run-id>
-lune step get <workflow-id> <run-id> <step-run-id>
+lunie step list <workflow-id> <run-id>
+lunie step get <workflow-id> <run-id> <step-run-id>
 ```
 
 ## Secrets
 
 ```bash
-lune secret list
-lune secret get <secret-id>
-lune secret create --name API_KEY --value "my-secret"
-lune secret update <secret-id> --description "Rotated"
-lune secret delete <secret-id>
+lunie secret list
+lunie secret get <secret-id>
+lunie secret create --name API_KEY --value "my-secret"
+lunie secret update <secret-id> --description "Rotated"
+lunie secret delete <secret-id>
 ```
 
 Secrets are not printed in table output. Use `--output json` if you need raw JSON.
@@ -251,5 +251,5 @@ Secrets are not printed in table output. Use `--output json` if you need raw JSO
 
 ## Troubleshooting
 
-- **Token not set**: run `lune auth login`
+- **Token not set**: run `lunie auth login`
 - **Validation errors**: verify JSON files match the server schema (e.g., CRON uses `cron`, not `expression`)

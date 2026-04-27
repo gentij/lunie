@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { WorkflowService } from './workflow.service';
-import { WorkflowRepository, PrismaService } from '@lune/db-access';
-import { SecretRepository } from '@lune/db-access';
+import { WorkflowRepository, PrismaService } from '@lunie/db-access';
+import { SecretRepository } from '@lunie/db-access';
 import {
   createWorkflowRepositoryMock,
   type WorkflowRepositoryMock,

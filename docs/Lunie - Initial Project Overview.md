@@ -1,7 +1,7 @@
 ---
 id: initial-project-overview
 title: Initial Project Overview (Archive)
-description: Early planning snapshot from initial Lune design phase.
+description: Early planning snapshot from initial Lunie design phase.
 slug: /archive/initial-project-overview
 ---
 
@@ -109,20 +109,20 @@ The CLI owns:
 
 ### Installation (example on Arch Linux)
 ```bash
-yay -S lune-cli-bin
+yay -S lunie-cli-bin
 ```
 
 This installs:
-- the `lune` CLI binary
+- the `lunie` CLI binary
 - deployment templates (Docker Compose)
 
 ### Initialization
 ```bash
-lune init
+lunie init
 ```
 
-`lune init`:
-- creates `~/.lune/`
+`lunie init`:
+- creates `~/.lunie/`
 - generates a config file
 - initializes secrets / admin token
 - starts the server stack via Docker Compose
@@ -141,7 +141,7 @@ lune init
 ## 6. Repository Structure (Monorepo)
 
 ```
-lune/
+lunie/
   docs/
   contracts/
   deploy/
@@ -171,8 +171,8 @@ Runtime code is **not shared**, only contracts.
 
 ### v1 authentication
 - Single **admin API token**
-- Generated during `lune init`
-- Stored in `~/.lune/config`
+- Generated during `lunie init`
+- Stored in `~/.lunie/config`
 - All API calls require `Authorization: Bearer <token>`
 
 ---

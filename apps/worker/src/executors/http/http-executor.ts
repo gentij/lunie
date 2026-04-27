@@ -113,7 +113,7 @@ export class HttpExecutor implements StepExecutor {
       }
     }
 
-    const body = { _luneHttp: meta, data };
+    const body = { _lunieHttp: meta, data };
 
     return {
       statusCode: response.status,

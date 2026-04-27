@@ -3,7 +3,7 @@ package components
 import (
 	"strings"
 
-	"github.com/gentij/lune/apps/cli/internal/tui/styles"
+	"github.com/gentij/lunie/apps/cli/internal/tui/styles"
 )
 
 func RenderModal(title string, body string, width int, height int, styleSet styles.StyleSet) string {

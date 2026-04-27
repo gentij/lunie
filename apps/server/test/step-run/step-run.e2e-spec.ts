@@ -31,7 +31,7 @@ import {
   type WorkflowRunRepositoryMock,
 } from 'test/workflow-run/workflow-run.repository.mock';
 import { createWorkflowRunFixture } from 'test/workflow-run/workflow-run.fixtures';
-import { StepRunRepository, WorkflowRunRepository } from '@lune/db-access';
+import { StepRunRepository, WorkflowRunRepository } from '@lunie/db-access';
 
 describe('StepRun (e2e)', () => {
   let app: NestFastifyApplication;

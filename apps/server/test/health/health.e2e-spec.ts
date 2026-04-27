@@ -15,7 +15,7 @@ import { AllowAuthGuard } from 'test/utils/allow-auth.guard';
 import { createPrismaServiceMock } from 'test/prisma/prisma.mocks';
 import { mockHealthResponse } from 'test/health/health.mocks';
 import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '@lune/db-access';
+import { PrismaService } from '@lunie/db-access';
 
 const HealthEnvelopeSchema = z.object({
   ok: z.literal(true),

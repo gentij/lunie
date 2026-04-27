@@ -14,21 +14,21 @@ export class CryptoService {
   private readonly secretKey: Buffer;
 
   constructor(private readonly config: ConfigService) {
-    const raw = this.config.get<string>('LUNE_SECRET_KEY');
+    const raw = this.config.get<string>('LUNIE_SECRET_KEY');
     if (!raw) {
       throw new Error(
-        'LUNE_SECRET_KEY is required (32-byte base64 or 64-char hex)',
+        'LUNIE_SECRET_KEY is required (32-byte base64 or 64-char hex)',
       );
     }
 
     this.secretKey = decodeKey(raw);
     if (this.secretKey.length !== 32) {
-      throw new Error('LUNE_SECRET_KEY must decode to 32 bytes');
+      throw new Error('LUNIE_SECRET_KEY must decode to 32 bytes');
     }
   }
 
   generateApiToken(): string {
-    return `lune_${randomBytes(32).toString('hex')}`;
+    return `lunie_${randomBytes(32).toString('hex')}`;
   }
 
   hashApiToken(token: string): string {
@@ -65,12 +65,12 @@ export class CryptoService {
     ]);
     const tag = cipher.getAuthTag();
 
-    // Format: lunesec:v1:<ivb64>:<tagb64>:<ctb64>
-    return `lunesec:v1:${iv.toString('base64')}:${tag.toString('base64')}:${ciphertext.toString('base64')}`;
+    // Format: luniesec:v1:<ivb64>:<tagb64>:<ctb64>
+    return `luniesec:v1:${iv.toString('base64')}:${tag.toString('base64')}:${ciphertext.toString('base64')}`;
   }
 
   decryptSecret(value: string): string {
-    if (!value.startsWith('lunesec:v1:')) {
+    if (!value.startsWith('luniesec:v1:')) {
       return value;
     }
 

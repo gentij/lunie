@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { Prisma, WorkflowRun } from '@prisma/client';
-import { WorkflowRepository, WorkflowRunRepository } from '@lune/db-access';
+import { WorkflowRepository, WorkflowRunRepository } from '@lunie/db-access';
 import { ErrorDefinitions } from 'src/common/http/errors/error-codes';
 import { AppError } from 'src/common/http/errors/app-error';
 import { buildPaginationMeta } from 'src/common/pagination/pagination';

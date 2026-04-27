@@ -10,13 +10,13 @@ mkdir -p "$DIST_DIR"
 build() {
   GOOS="$1" GOARCH="$2" OUTPUT_NAME="$3"
   echo "Building $OUTPUT_NAME ($GOOS/$GOARCH)"
-  (cd "$CLI_DIR" && GOOS="$GOOS" GOARCH="$GOARCH" go build -o "$DIST_DIR/$OUTPUT_NAME" ./cmd/lune)
+  (cd "$CLI_DIR" && GOOS="$GOOS" GOARCH="$GOARCH" go build -o "$DIST_DIR/$OUTPUT_NAME" ./cmd/lunie)
 }
 
-build darwin arm64 lune_darwin_arm64
-build darwin amd64 lune_darwin_amd64
-build linux amd64 lune_linux_amd64
-build linux arm64 lune_linux_arm64
-build windows amd64 lune_windows_amd64.exe
+build darwin arm64 lunie_darwin_arm64
+build darwin amd64 lunie_darwin_amd64
+build linux amd64 lunie_linux_amd64
+build linux arm64 lunie_linux_arm64
+build windows amd64 lunie_windows_amd64.exe
 
 echo "CLI builds complete: $DIST_DIR"

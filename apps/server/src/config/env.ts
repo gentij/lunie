@@ -52,17 +52,17 @@ const envSchema = z.object({
   CACHE_REDIS_PREFIX: z
     .string()
     .optional()
-    .transform((val) => val ?? 'lune:server:'),
+    .transform((val) => val ?? 'lunie:server:'),
 
-  LUNE_ADMIN_TOKEN: z
+  LUNIE_ADMIN_TOKEN: z
     .string()
-    .min(32, 'LUNE_ADMIN_TOKEN must be at least 32 characters'),
+    .min(32, 'LUNIE_ADMIN_TOKEN must be at least 32 characters'),
 
-  LUNE_SECRET_KEY: z
+  LUNIE_SECRET_KEY: z
     .string()
-    .min(1, 'LUNE_SECRET_KEY is required')
+    .min(1, 'LUNIE_SECRET_KEY is required')
     .refine((v) => /^[0-9a-fA-F]{64}$/.test(v) || isBase64Key32(v), {
-      message: 'LUNE_SECRET_KEY must be 64-char hex or base64 for 32 bytes',
+      message: 'LUNIE_SECRET_KEY must be 64-char hex or base64 for 32 bytes',
     }),
 
   VERSION: z.string().default('1'),

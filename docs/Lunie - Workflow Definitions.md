@@ -1,15 +1,15 @@
 ---
 id: workflow-definitions
 title: Workflow Definitions
-description: JSON schema and rules for Lune workflow definitions.
+description: JSON schema and rules for Lunie workflow definitions.
 slug: /workflow-definitions
 ---
 
-# Lune - Workflow Definitions
+# Lunie - Workflow Definitions
 
-This document describes the JSON format used for Lune workflow definitions.
+This document describes the JSON format used for Lunie workflow definitions.
 
-Lune stores a workflow definition inside a **WorkflowVersion** (immutable snapshot).
+Lunie stores a workflow definition inside a **WorkflowVersion** (immutable snapshot).
 
 ## Top-level Shape
 
@@ -37,7 +37,7 @@ Precedence (highest to lowest):
 
 ## Run Notifications (MVP)
 
-Lune can send workflow run completion notifications directly from a workflow definition.
+Lunie can send workflow run completion notifications directly from a workflow definition.
 
 Supported providers:
 
@@ -97,7 +97,7 @@ Each step can declare dependencies:
 }
 ```
 
-Lune also infers dependencies from `{{steps.*}}` references found in step `request` payloads.
+Lunie also infers dependencies from `{{steps.*}}` references found in step `request` payloads.
 
 Rules:
 - Unknown step references are rejected at version creation time.
@@ -154,7 +154,7 @@ Notes:
 - Default timeout is 30s if not provided.
 - Response bodies over the soft limit (256KB) fail the step.
 
-When referencing `{{steps.fetch_posts.output...}}`, Lune resolves `.output` against the HTTP response body data.
+When referencing `{{steps.fetch_posts.output...}}`, Lunie resolves `.output` against the HTTP response body data.
 
 ### transform
 

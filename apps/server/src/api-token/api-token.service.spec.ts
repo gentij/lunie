@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { ApiTokenService } from './api-token.service';
-import { ApiTokenRepository } from '@lune/db-access';
+import { ApiTokenRepository } from '@lunie/db-access';
 import {
   createApiTokenRepositoryMock,
   ApiTokenRepositoryMock,

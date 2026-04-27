@@ -5,9 +5,9 @@ import {
   StepRunRepository,
   WorkflowRunRepository,
   WorkflowVersionRepository,
-} from '@lune/db-access';
+} from '@lunie/db-access';
 import type { Job } from 'bullmq';
-import type { StepRunJobPayload } from '@lune/contracts';
+import type { StepRunJobPayload } from '@lunie/contracts';
 import { ExecutorRegistry } from '../executors/executor-registry';
 import { createPrismaServiceMock } from 'test/prisma.mocks';
 import { CryptoService } from '../crypto/crypto.service';
@@ -102,7 +102,7 @@ describe('StepRunProcessor', () => {
       findManyByNames: jest.fn().mockResolvedValue([]),
     } as unknown as SecretRepository;
 
-    process.env.LUNE_SECRET_KEY = '0'.repeat(64);
+    process.env.LUNIE_SECRET_KEY = '0'.repeat(64);
     const crypto = new CryptoService();
 
     const redis = { eval: jest.fn().mockResolvedValue([1, 60]) };
@@ -210,7 +210,7 @@ describe('StepRunProcessor', () => {
       findManyByNames: jest.fn().mockResolvedValue([]),
     } as unknown as SecretRepository;
 
-    process.env.LUNE_SECRET_KEY = '0'.repeat(64);
+    process.env.LUNIE_SECRET_KEY = '0'.repeat(64);
     const crypto = new CryptoService();
 
     const redis = { eval: jest.fn().mockRejectedValue(new Error('redis down')) };
@@ -300,7 +300,7 @@ describe('StepRunProcessor', () => {
       findManyByNames: jest.fn().mockResolvedValue([]),
     } as unknown as SecretRepository;
 
-    process.env.LUNE_SECRET_KEY = '0'.repeat(64);
+    process.env.LUNIE_SECRET_KEY = '0'.repeat(64);
     const crypto = new CryptoService();
 
     const redis = { eval: jest.fn().mockResolvedValue([1, 60]) };
@@ -376,7 +376,7 @@ describe('StepRunProcessor', () => {
       findManyByNames: jest.fn().mockResolvedValue([]),
     } as unknown as SecretRepository;
 
-    process.env.LUNE_SECRET_KEY = '0'.repeat(64);
+    process.env.LUNIE_SECRET_KEY = '0'.repeat(64);
     const crypto = new CryptoService();
 
     const executeFailed = jest.fn().mockRejectedValue(new Error('boom'));

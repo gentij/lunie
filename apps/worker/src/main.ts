@@ -10,7 +10,7 @@ async function bootstrap() {
   });
 
   const logger = new Logger('WorkerBootstrap');
-  logger.log('Lune Worker started');
+  logger.log('Lunie Worker started');
 
   app.enableShutdownHooks();
 }

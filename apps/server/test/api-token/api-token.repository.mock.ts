@@ -1,4 +1,4 @@
-import { ApiTokenRepository } from '@lune/db-access';
+import { ApiTokenRepository } from '@lunie/db-access';
 
 export type ApiTokenRepositoryMock = jest.Mocked<
   Pick<

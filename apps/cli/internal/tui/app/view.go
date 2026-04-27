@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/gentij/lune/apps/cli/internal/tui/components"
+	"github.com/gentij/lunie/apps/cli/internal/tui/components"
 )
 
 func Render(m Model) string {

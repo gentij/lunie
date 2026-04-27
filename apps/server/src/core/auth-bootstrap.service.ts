@@ -24,7 +24,7 @@ export class AuthBootstrapService implements OnModuleInit {
       return;
     }
 
-    const rawToken: string = this.configService.getOrThrow('LUNE_ADMIN_TOKEN');
+    const rawToken: string = this.configService.getOrThrow('LUNIE_ADMIN_TOKEN');
     const tokenHash = this.cryptoService.hashApiToken(rawToken);
 
     await this.apiTokenService.createAdminToken({

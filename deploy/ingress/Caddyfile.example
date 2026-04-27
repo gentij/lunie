@@ -1,4 +1,4 @@
-lune.example.com {
+lunie.example.com {
   encode gzip
 
   @webhooks path /v1/api/hooks/*

@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/charmbracelet/bubbles/table"
-	"github.com/gentij/lune/apps/cli/internal/config"
-	"github.com/gentij/lune/apps/cli/internal/tui/data"
+	"github.com/gentij/lunie/apps/cli/internal/config"
+	"github.com/gentij/lunie/apps/cli/internal/tui/data"
 )
 
 func TestRefreshView_PreservesSelectionByRowID(t *testing.T) {

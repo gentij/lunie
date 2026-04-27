@@ -1,12 +1,12 @@
 version: 2
 
-project_name: lune
+project_name: lunie
 
 builds:
-  - id: lune
+  - id: lunie
     dir: apps/cli
-    main: ./cmd/lune
-    binary: lune
+    main: ./cmd/lunie
+    binary: lunie
     env:
       - CGO_ENABLED=0
     goos:
@@ -19,7 +19,7 @@ builds:
 archives:
   - id: archives
     builds:
-      - lune
+      - lunie
     format: tar.gz
     name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
 
@@ -29,32 +29,32 @@ checksum:
 release:
   github:
     owner: gentij
-    name: lune
+    name: lunie
 
 brews:
-  - name: lune
+  - name: lunie
     directory: Formula
     repository:
       owner: gentij
-      name: homebrew-lune
+      name: homebrew-lunie
       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
-    homepage: https://github.com/gentij/lune
-    description: Lune CLI
+    homepage: https://github.com/gentij/lunie
+    description: Lunie CLI
     license: MIT
     install: |
-      bin.install "lune"
+      bin.install "lunie"
 
 nfpms:
   - id: deb
-    package_name: lune
+    package_name: lunie
     formats:
       - deb
     section: utils
     priority: optional
-    maintainer: Lune <support@lune.dev>
-    description: Lune CLI
+    maintainer: Lunie <support@lunie.dev>
+    description: Lunie CLI
     license: MIT
-    homepage: https://github.com/gentij/lune
+    homepage: https://github.com/gentij/lunie
 
 publishers:
   - name: cloudsmith-ubuntu-jammy

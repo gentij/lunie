@@ -17,7 +17,7 @@ var (
 
 var startCmd = &cobra.Command{
 	Use:   "start [service...]",
-	Short: "Start the local Lune stack",
+	Short: "Start the local Lunie stack",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		baseDir, composePath, envPath, err := resolveInitPaths()
 		if err != nil {
@@ -36,7 +36,7 @@ var startCmd = &cobra.Command{
 
 var statusCmd = &cobra.Command{
 	Use:   "status",
-	Short: "Show local Lune stack status",
+	Short: "Show local Lunie stack status",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		baseDir, composePath, envPath, err := resolveInitPaths()
 		if err != nil {
@@ -48,7 +48,7 @@ var statusCmd = &cobra.Command{
 
 var stopCmd = &cobra.Command{
 	Use:   "stop",
-	Short: "Stop the local Lune stack",
+	Short: "Stop the local Lunie stack",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		baseDir, composePath, envPath, err := resolveInitPaths()
 		if err != nil {
@@ -60,7 +60,7 @@ var stopCmd = &cobra.Command{
 
 var logsCmd = &cobra.Command{
 	Use:   "logs [service...]",
-	Short: "Show Lune stack logs",
+	Short: "Show Lunie stack logs",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		baseDir, composePath, envPath, err := resolveInitPaths()
 		if err != nil {
@@ -95,13 +95,13 @@ func resolveInitPaths() (string, string, string, error) {
 
 	if _, err := os.Stat(composePath); err != nil {
 		if os.IsNotExist(err) {
-			return "", "", "", fmt.Errorf("lune not initialized; run 'lune init'")
+			return "", "", "", fmt.Errorf("lunie not initialized; run 'lunie init'")
 		}
 		return "", "", "", err
 	}
 	if _, err := os.Stat(envPath); err != nil {
 		if os.IsNotExist(err) {
-			return "", "", "", fmt.Errorf("missing env file; run 'lune init'")
+			return "", "", "", fmt.Errorf("missing env file; run 'lunie init'")
 		}
 		return "", "", "", err
 	}

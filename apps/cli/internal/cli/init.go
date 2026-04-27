@@ -16,10 +16,10 @@ import (
 )
 
 const (
-	defaultInitDirName = ".lune"
+	defaultInitDirName = ".lunie"
 	composeFileName    = "docker-compose.yml"
 	envFileName        = ".env"
-	localDatabaseURL   = "postgresql://lune:lune@postgres:5432/lune"
+	localDatabaseURL   = "postgresql://lunie:lunie@postgres:5432/lunie"
 	localRedisURL      = "redis://redis:6379"
 )
 
@@ -33,7 +33,7 @@ var (
 
 var initCmd = &cobra.Command{
 	Use:   "init",
-	Short: "Initialize a Lune stack",
+	Short: "Initialize a Lunie stack",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := validateDatastoreFlags(); err != nil {
 			return err
@@ -127,7 +127,7 @@ var initCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Printf("Lune initialized in %s\n", baseDir)
+		fmt.Printf("Lunie initialized in %s\n", baseDir)
 		fmt.Printf("Compose file: %s\n", composePath)
 		fmt.Printf("Env file: %s\n", envPath)
 		return nil
@@ -156,12 +156,12 @@ func resolveInitDir() (string, error) {
 }
 
 func requiredEnvValues(existing map[string]string) (map[string]string, error) {
-	adminToken := existing["LUNE_ADMIN_TOKEN"]
+	adminToken := existing["LUNIE_ADMIN_TOKEN"]
 	if adminToken == "" {
 		adminToken = randomHex(32)
 	}
 
-	secretKey := existing["LUNE_SECRET_KEY"]
+	secretKey := existing["LUNIE_SECRET_KEY"]
 	if secretKey == "" {
 		secretKey = randomHex(32)
 	}
@@ -198,11 +198,11 @@ func requiredEnvValues(existing map[string]string) (map[string]string, error) {
 	}
 
 	return map[string]string{
-		"DATABASE_URL":     databaseURL,
-		"REDIS_URL":        redisURL,
-		"LUNE_ADMIN_TOKEN": adminToken,
-		"LUNE_SECRET_KEY":  secretKey,
-		"PORT":             port,
+		"DATABASE_URL":      databaseURL,
+		"REDIS_URL":         redisURL,
+		"LUNIE_ADMIN_TOKEN": adminToken,
+		"LUNIE_SECRET_KEY":  secretKey,
+		"PORT":              port,
 	}, nil
 }
 
@@ -251,13 +251,13 @@ func writeEnvFile(path string, values map[string]string, extras []string) error 
 	order := []string{
 		"DATABASE_URL",
 		"REDIS_URL",
-		"LUNE_ADMIN_TOKEN",
-		"LUNE_SECRET_KEY",
+		"LUNIE_ADMIN_TOKEN",
+		"LUNIE_SECRET_KEY",
 		"PORT",
 	}
 
 	var lines []string
-	lines = append(lines, "# Lune local environment")
+	lines = append(lines, "# Lunie local environment")
 	for _, key := range order {
 		if val, ok := values[key]; ok && val != "" {
 			lines = append(lines, fmt.Sprintf("%s=%s", key, val))
@@ -305,21 +305,21 @@ func writeComposeFile(path string, force bool, withLocalDatastores bool) error {
 
 	var content string
 	if withLocalDatastores {
-		content = strings.TrimLeft(`name: lune
+		content = strings.TrimLeft(`name: lunie
 
 services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: lune
-      POSTGRES_PASSWORD: lune
-      POSTGRES_DB: lune
+      POSTGRES_USER: lunie
+      POSTGRES_PASSWORD: lunie
+      POSTGRES_DB: lunie
     ports:
       - "5432:5432"
     volumes:
-      - lune_pgdata:/var/lib/postgresql/data
+      - lunie_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U lune -d lune"]
+      test: ["CMD-SHELL", "pg_isready -U lunie -d lunie"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -329,7 +329,7 @@ services:
     ports:
       - "6379:6379"
     volumes:
-      - lune_redisdata:/data
+      - lunie_redisdata:/data
     command: ["redis-server", "--appendonly", "yes"]
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -338,7 +338,7 @@ services:
       retries: 10
 
   server:
-    image: gentij/lune-server:latest
+    image: gentij/lunie-server:latest
     env_file:
       - .env
     ports:
@@ -349,7 +349,7 @@ services:
     restart: unless-stopped
 
   worker:
-    image: gentij/lune-worker:latest
+    image: gentij/lunie-worker:latest
     env_file:
       - .env
     depends_on:
@@ -358,15 +358,15 @@ services:
     restart: unless-stopped
 
 volumes:
-  lune_pgdata:
-  lune_redisdata:
+  lunie_pgdata:
+  lunie_redisdata:
 `, "\n")
 	} else {
-		content = strings.TrimLeft(`name: lune
+		content = strings.TrimLeft(`name: lunie
 
 services:
   server:
-    image: gentij/lune-server:latest
+    image: gentij/lunie-server:latest
     env_file:
       - .env
     ports:
@@ -374,7 +374,7 @@ services:
     restart: unless-stopped
 
   worker:
-    image: gentij/lune-worker:latest
+    image: gentij/lunie-worker:latest
     env_file:
       - .env
     restart: unless-stopped
@@ -430,11 +430,11 @@ func validateComposeDatastoreMode(composePath string) error {
 	hasRedis := strings.Contains(compose, "\n  redis:")
 
 	if initWithLocalDatastores && (!hasPostgres || !hasRedis) {
-		return fmt.Errorf("existing compose file does not define local datastores; rerun 'lune init --with-local-datastores --force'")
+		return fmt.Errorf("existing compose file does not define local datastores; rerun 'lunie init --with-local-datastores --force'")
 	}
 
 	if !initWithLocalDatastores && hasPostgres && hasRedis && strings.TrimSpace(initDatabaseURL) != "" && strings.TrimSpace(initRedisURL) != "" {
-		return fmt.Errorf("existing compose file still includes local datastores; rerun 'lune init --force --database-url <postgres-url> --redis-url <redis-url>' to switch modes")
+		return fmt.Errorf("existing compose file still includes local datastores; rerun 'lunie init --force --database-url <postgres-url> --redis-url <redis-url>' to switch modes")
 	}
 
 	return nil
@@ -451,7 +451,7 @@ func maybeUpdateConfig(values map[string]string) error {
 	}
 
 	if strings.TrimSpace(cfg.Token) == "" {
-		if token := strings.TrimSpace(values["LUNE_ADMIN_TOKEN"]); token != "" {
+		if token := strings.TrimSpace(values["LUNIE_ADMIN_TOKEN"]); token != "" {
 			cfg.Token = token
 			return saveConfig(path, cfg)
 		}
@@ -488,9 +488,9 @@ func waitForPostgres(baseDir string, composePath string) error {
 			"postgres",
 			"pg_isready",
 			"-U",
-			"lune",
+			"lunie",
 			"-d",
-			"lune",
+			"lunie",
 		)
 		if err == nil {
 			return nil

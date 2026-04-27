@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gentij/lune/apps/cli/internal/tui/data"
+	"github.com/gentij/lunie/apps/cli/internal/tui/data"
 )
 
 func workflowName(store *data.Store, workflowID string) string {

@@ -1,4 +1,4 @@
-import type { WorkflowDefinition } from '@lune/contracts';
+import type { WorkflowDefinition } from '@lunie/contracts';
 import {
   getReferencedSecrets,
   validateWorkflowDefinitionStrict,

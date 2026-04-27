@@ -84,13 +84,13 @@ importers:
       '@prisma/client':
         specifier: ^7.2.0
         version: 7.3.0(prisma@7.3.0(@types/react@19.2.10)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(typescript@5.9.3)
-      '@lune/contracts':
+      '@lunie/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
-      '@lune/db-access':
+      '@lunie/db-access':
         specifier: workspace:*
         version: link:../../packages/db-access
-      '@lune/queue-config':
+      '@lunie/queue-config':
         specifier: workspace:*
         version: link:../../packages/queue
       bullmq:
@@ -241,13 +241,13 @@ importers:
       '@prisma/client':
         specifier: ^7.3.0
         version: 7.3.0(prisma@7.3.0(@types/react@19.2.10)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(typescript@5.9.3)
-      '@lune/contracts':
+      '@lunie/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
-      '@lune/db-access':
+      '@lunie/db-access':
         specifier: workspace:*
         version: link:../../packages/db-access
-      '@lune/queue-config':
+      '@lunie/queue-config':
         specifier: workspace:*
         version: link:../../packages/queue
       bullmq:

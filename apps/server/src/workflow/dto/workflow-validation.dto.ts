@@ -1,6 +1,6 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
-import { WorkflowDefinitionSchema } from '@lune/contracts';
+import { WorkflowDefinitionSchema } from '@lunie/contracts';
 
 export const ValidateWorkflowDefinitionReqSchema = z.object({
   definition: WorkflowDefinitionSchema,

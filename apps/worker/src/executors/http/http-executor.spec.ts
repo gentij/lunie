@@ -25,7 +25,7 @@ describe('HttpExecutor', () => {
 
     expect(out.statusCode).toBe(200);
     expect(out.body).toEqual({
-      _luneHttp: expect.objectContaining({
+      _lunieHttp: expect.objectContaining({
         contentType: expect.any(String),
         truncated: false,
         softMaxBytes: expect.any(Number),

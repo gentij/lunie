@@ -60,7 +60,7 @@ type StyleSet struct {
 
 func DefaultTheme() Theme {
 	return Theme{
-		Name:       "Lune",
+		Name:       "Lunie",
 		Background: lipgloss.Color("#0B0F14"),
 		Surface:    lipgloss.Color("#111827"),
 		SurfaceAlt: lipgloss.Color("#0F172A"),
@@ -85,7 +85,7 @@ func DefaultTheme() Theme {
 
 func ThemeRegistry() map[string]Theme {
 	return map[string]Theme{
-		"lune": DefaultTheme(),
+		"lunie": DefaultTheme(),
 		"simple-dark": {
 			Name:       "Simple Dark",
 			Background: lipgloss.Color("#0B0B0B"),

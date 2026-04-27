@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/gentij/lune/apps/cli/internal/api"
-	"github.com/gentij/lune/apps/cli/internal/output"
+	"github.com/gentij/lunie/apps/cli/internal/api"
+	"github.com/gentij/lunie/apps/cli/internal/output"
 	"github.com/spf13/cobra"
 )
 

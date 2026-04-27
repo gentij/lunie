@@ -4,11 +4,11 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/bubbles/table"
-	"github.com/gentij/lune/apps/cli/internal/config"
-	"github.com/gentij/lune/apps/cli/internal/tui/components"
-	"github.com/gentij/lune/apps/cli/internal/tui/screens"
-	"github.com/gentij/lune/apps/cli/internal/tui/styles"
-	"github.com/gentij/lune/apps/cli/internal/tui/utils"
+	"github.com/gentij/lunie/apps/cli/internal/config"
+	"github.com/gentij/lunie/apps/cli/internal/tui/components"
+	"github.com/gentij/lunie/apps/cli/internal/tui/screens"
+	"github.com/gentij/lunie/apps/cli/internal/tui/styles"
+	"github.com/gentij/lunie/apps/cli/internal/tui/utils"
 )
 
 func (m *Model) refreshView() {
@@ -195,12 +195,12 @@ func (m *Model) applyTheme(themeKey string, persist bool) {
 	registry := styles.ThemeRegistry()
 	key := strings.ToLower(strings.TrimSpace(themeKey))
 	if key == "" {
-		key = "lune"
+		key = "lunie"
 	}
 	selected, ok := registry[key]
 	if !ok {
 		selected = styles.DefaultTheme()
-		key = "lune"
+		key = "lunie"
 	}
 
 	m.theme = selected

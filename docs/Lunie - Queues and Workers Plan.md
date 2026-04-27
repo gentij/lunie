@@ -1,18 +1,18 @@
 ---
 id: queues-and-workers-plan
 title: Queues and Workers Plan (Archive)
-description: Planning document for Lune queue and worker architecture.
+description: Planning document for Lunie queue and worker architecture.
 slug: /archive/queues-and-workers-plan
 ---
 
-# Lune - Queues and Workers Plan
+# Lunie - Queues and Workers Plan
 
 > Planning document.
 >
 > It explains the execution model rationale. For the current shipped behavior,
 > use `docs/Architecture.md` and runtime docs in `README.md`.
 
-This document outlines how Lune should execute workflows using NestJS
+This document outlines how Lunie should execute workflows using NestJS
 BullMQ queues and a separate worker app. It is based on the NestJS queues
 documentation and is aligned with the current data model (Workflow, Trigger,
 Event, WorkflowRun, StepRun).

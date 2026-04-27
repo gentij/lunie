@@ -5,7 +5,7 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/gentij/lune/apps/cli/internal/api"
+	"github.com/gentij/lunie/apps/cli/internal/api"
 )
 
 func pulseTick() tea.Cmd {

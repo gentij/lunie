@@ -1,6 +1,6 @@
-# Lune Server
+# Lunie Server
 
-Lune Server is the HTTP API for workflows, triggers, runs, step runs, events, and secrets.
+Lunie Server is the HTTP API for workflows, triggers, runs, step runs, events, and secrets.
 
 It is built with NestJS + Fastify and backed by PostgreSQL + Redis.
 
@@ -24,8 +24,8 @@ Set required env vars in `apps/server/.env`:
 
 - `DATABASE_URL`
 - `REDIS_URL`
-- `LUNE_ADMIN_TOKEN`
-- `LUNE_SECRET_KEY`
+- `LUNIE_ADMIN_TOKEN`
+- `LUNIE_SECRET_KEY`
 
 Generate Prisma client and apply migrations:
 

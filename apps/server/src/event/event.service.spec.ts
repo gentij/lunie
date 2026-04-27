@@ -4,7 +4,7 @@ import {
   EventRepository,
   WorkflowRepository,
   TriggerRepository,
-} from '@lune/db-access';
+} from '@lunie/db-access';
 import {
   createEventRepositoryMock,
   type EventRepositoryMock,

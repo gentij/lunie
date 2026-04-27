@@ -2,9 +2,9 @@ package tui
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/gentij/lune/apps/cli/internal/api"
-	"github.com/gentij/lune/apps/cli/internal/config"
-	"github.com/gentij/lune/apps/cli/internal/tui/app"
+	"github.com/gentij/lunie/apps/cli/internal/api"
+	"github.com/gentij/lunie/apps/cli/internal/config"
+	"github.com/gentij/lunie/apps/cli/internal/tui/app"
 )
 
 type App struct {

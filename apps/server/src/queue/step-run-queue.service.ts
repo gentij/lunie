@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import type { JobsOptions, Queue } from 'bullmq';
-import { StepRunJobPayload, StepRunJobPayloadSchema } from '@lune/contracts';
+import { StepRunJobPayload, StepRunJobPayloadSchema } from '@lunie/contracts';
 import { STEP_RUN_QUEUE_NAME } from './queue.constants';
 
 const DEFAULT_ATTEMPTS = 3;

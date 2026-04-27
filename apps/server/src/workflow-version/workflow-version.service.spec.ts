@@ -1,6 +1,9 @@
 import { Test } from '@nestjs/testing';
 import { WorkflowVersionService } from './workflow-version.service';
-import { WorkflowVersionRepository, WorkflowRepository } from '@lune/db-access';
+import {
+  WorkflowVersionRepository,
+  WorkflowRepository,
+} from '@lunie/db-access';
 import {
   createWorkflowVersionRepositoryMock,
   type WorkflowVersionRepositoryMock,

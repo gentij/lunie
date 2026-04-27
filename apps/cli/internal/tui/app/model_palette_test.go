@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/charmbracelet/bubbles/list"
-	"github.com/gentij/lune/apps/cli/internal/tui/styles"
+	"github.com/gentij/lunie/apps/cli/internal/tui/styles"
 )
 
 func TestBuildPalette_RecentActionsDedupedAgainstBaseItems(t *testing.T) {

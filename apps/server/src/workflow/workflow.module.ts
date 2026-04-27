@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { SecretRepository, WorkflowRepository } from '@lune/db-access';
+import { SecretRepository, WorkflowRepository } from '@lunie/db-access';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { OrchestrationModule } from 'src/core/orchestration.module';
 import { WorkflowController } from './workflow.controller';

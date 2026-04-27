@@ -1,5 +1,5 @@
 {
-  "name": "@lune/queue-config",
+  "name": "@lunie/queue-config",
   "version": "0.0.1",
   "private": true,
   "main": "./dist/index.js",

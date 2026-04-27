@@ -11,12 +11,12 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/gentij/lune/apps/cli/internal/api"
-	"github.com/gentij/lune/apps/cli/internal/config"
-	"github.com/gentij/lune/apps/cli/internal/tui/components"
-	"github.com/gentij/lune/apps/cli/internal/tui/data"
-	"github.com/gentij/lune/apps/cli/internal/tui/layout"
-	"github.com/gentij/lune/apps/cli/internal/tui/styles"
+	"github.com/gentij/lunie/apps/cli/internal/api"
+	"github.com/gentij/lunie/apps/cli/internal/config"
+	"github.com/gentij/lunie/apps/cli/internal/tui/components"
+	"github.com/gentij/lunie/apps/cli/internal/tui/data"
+	"github.com/gentij/lunie/apps/cli/internal/tui/layout"
+	"github.com/gentij/lunie/apps/cli/internal/tui/styles"
 )
 
 type ViewID string
@@ -338,7 +338,7 @@ func NewModel(client *api.Client, serverURL string, tokenSet bool, cfg config.Co
 		view:               ViewDashboard,
 		views:              []ViewID{ViewDashboard, ViewWorkflows, ViewRuns, ViewTriggers, ViewEvents, ViewSecrets, ViewTokens},
 		theme:              defaultTheme,
-		themeName:          "lune",
+		themeName:          "lunie",
 		styles:             styleSet,
 		store:              store,
 		table:              tableModel,

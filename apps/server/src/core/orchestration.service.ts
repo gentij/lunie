@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { PrismaService } from '@lune/db-access';
-import { StepRunJobPayload, WorkflowDefinition } from '@lune/contracts';
+import { PrismaService } from '@lunie/db-access';
+import { StepRunJobPayload, WorkflowDefinition } from '@lunie/contracts';
 import type { JobsOptions } from 'bullmq';
 
 import { StepRunQueueService } from '../queue/step-run-queue.service';

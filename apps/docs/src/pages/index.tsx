@@ -24,7 +24,7 @@ function HomepageHeader() {
           <Link
             className="button button--secondary button--lg"
             to="/docs/getting-started">
-            Install and Use Lune
+            Install and Use Lunie
           </Link>
           <Link
             className="button button--outline button--lg"
@@ -42,7 +42,7 @@ export default function Home(): ReactNode {
   return (
     <Layout
       title={siteConfig.title}
-      description="Lune product and developer documentation">
+      description="Lunie product and developer documentation">
       <HomepageHeader />
       <main />
     </Layout>

@@ -7,9 +7,9 @@ slug: /development
 
 # Development Guide
 
-This guide covers local development for Lune (server, worker, CLI, and TUI).
+This guide covers local development for Lunie (server, worker, CLI, and TUI).
 
-Use this page when contributing to Lune itself. If you only want to install and run Lune, start with `docs/Getting-Started.md`.
+Use this page when contributing to Lunie itself. If you only want to install and run Lunie, start with `docs/Getting-Started.md`.
 
 ## Prerequisites
 
@@ -22,8 +22,8 @@ Use this page when contributing to Lune itself. If you only want to install and 
 ## Clone and Install
 
 ```bash
-git clone https://github.com/gentij/lune.git
-cd lune
+git clone https://github.com/gentij/lunie.git
+cd lunie
 pnpm install
 ```
 
@@ -59,16 +59,16 @@ Set required values in `apps/server/.env`:
 
 - `DATABASE_URL`
 - `REDIS_URL`
-- `LUNE_ADMIN_TOKEN` (minimum 32 characters)
-- `LUNE_SECRET_KEY` (64-char hex or base64 for 32 bytes)
+- `LUNIE_ADMIN_TOKEN` (minimum 32 characters)
+- `LUNIE_SECRET_KEY` (64-char hex or base64 for 32 bytes)
 
 Optional helper commands for secure values:
 
 ```bash
-# 64-char hex (good for LUNE_SECRET_KEY)
+# 64-char hex (good for LUNIE_SECRET_KEY)
 openssl rand -hex 32
 
-# 64-char token (good for LUNE_ADMIN_TOKEN)
+# 64-char token (good for LUNIE_ADMIN_TOKEN)
 openssl rand -hex 32
 ```
 
@@ -119,10 +119,10 @@ Then use `--server http://localhost:3100/v1/api` in CLI commands.
 
 Swagger UI is served at `/api` and uses bearer token auth.
 
-Use your `LUNE_ADMIN_TOKEN` to call the API directly:
+Use your `LUNIE_ADMIN_TOKEN` to call the API directly:
 
 ```bash
-TOKEN="<LUNE_ADMIN_TOKEN>"
+TOKEN="<LUNIE_ADMIN_TOKEN>"
 
 # Health (public)
 curl -sS "http://localhost:3000/v1/api/health"
@@ -138,17 +138,17 @@ Build CLI binary from source:
 
 ```bash
 cd apps/cli
-go build -o ../../lune ./cmd/lune
+go build -o ../../lunie ./cmd/lunie
 cd ../..
 ```
 
 Common commands:
 
 ```bash
-./lune auth login --token "<LUNE_ADMIN_TOKEN>"
-./lune auth whoami
-./lune workflow list
-./lune tui
+./lunie auth login --token "<LUNIE_ADMIN_TOKEN>"
+./lunie auth whoami
+./lunie workflow list
+./lunie tui
 ```
 
 ## Testing
@@ -196,7 +196,7 @@ pnpm -C apps/worker format
 
 ## Documentation Site
 
-Lune docs are served by Docusaurus from `apps/docs`, using markdown source files in `docs/`.
+Lunie docs are served by Docusaurus from `apps/docs`, using markdown source files in `docs/`.
 
 ```bash
 pnpm docs:dev
@@ -205,14 +205,14 @@ pnpm docs:build
 
 ## Environment Variable Reference
 
-Lune server variables (from runtime validation):
+Lunie server variables (from runtime validation):
 
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `DATABASE_URL` | Yes | PostgreSQL connection string (`postgres://` or `postgresql://`) |
 | `REDIS_URL` | Yes | Redis connection string (`redis://`) |
-| `LUNE_ADMIN_TOKEN` | Yes | Admin bearer token used by CLI/TUI and API clients |
-| `LUNE_SECRET_KEY` | Yes | Encryption key for secrets (64-char hex or base64 for 32 bytes) |
+| `LUNIE_ADMIN_TOKEN` | Yes | Admin bearer token used by CLI/TUI and API clients |
+| `LUNIE_SECRET_KEY` | Yes | Encryption key for secrets (64-char hex or base64 for 32 bytes) |
 | `PORT` | No | API server port (default `3000`) |
 | `CACHE_TTL_SECONDS` | No | Cache TTL in seconds (default `60`) |
 | `CACHE_REDIS_PREFIX` | No | Cache key namespace prefix |
@@ -239,8 +239,8 @@ Lune server variables (from runtime validation):
 
 ### API returns unauthorized
 
-- Verify `LUNE_ADMIN_TOKEN` in `apps/server/.env`
-- Re-run `./lune auth login --token "<token>"`
+- Verify `LUNIE_ADMIN_TOKEN` in `apps/server/.env`
+- Re-run `./lunie auth login --token "<token>"`
 
 ### Worker is not processing runs
 
@@ -262,5 +262,5 @@ pnpm -C apps/worker build
 - [Getting Started](./Getting-Started.md)
 - [CLI Usage](./CLI-Usage.md)
 - [Architecture Overview](./Architecture.md)
-- [Lune TUI Guide](./Lune%20-%20TUI.md)
-- [Workflow Engine Concepts](./Lune%20-%20Workflow%20Engine.md)
+- [Lunie TUI Guide](./Lunie%20-%20TUI.md)
+- [Workflow Engine Concepts](./Lunie%20-%20Workflow%20Engine.md)

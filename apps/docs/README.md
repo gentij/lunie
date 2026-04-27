@@ -1,6 +1,6 @@
-# Lune Docs Site
+# Lunie Docs Site
 
-This app hosts the Lune documentation website using Docusaurus.
+This app hosts the Lunie documentation website using Docusaurus.
 
 The content source is the repository-level `docs/` directory.
 

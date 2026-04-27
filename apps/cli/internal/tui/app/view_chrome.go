@@ -6,7 +6,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
-	"github.com/gentij/lune/apps/cli/internal/tui/components"
+	"github.com/gentij/lunie/apps/cli/internal/tui/components"
 )
 
 func renderMainHeader(m Model, width int) string {

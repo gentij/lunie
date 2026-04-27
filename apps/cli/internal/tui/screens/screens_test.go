@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gentij/lune/apps/cli/internal/tui/data"
+	"github.com/gentij/lunie/apps/cli/internal/tui/data"
 )
 
 func TestRecentRunRows_StatusColumnUsesStatusValue(t *testing.T) {

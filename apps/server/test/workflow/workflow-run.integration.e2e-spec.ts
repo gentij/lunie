@@ -18,9 +18,9 @@ import { OrchestrationService } from 'src/core/orchestration.service';
 import { AllExceptionsFilter } from 'src/common/http/filters/all-exceptions.filter';
 import { ResponseInterceptor } from 'src/common/http/interceptors/response.interceptor';
 import { AllowAuthGuard } from 'test/utils/allow-auth.guard';
-import { WorkflowRepository } from '@lune/db-access';
-import { PrismaService } from '@lune/db-access';
-import { SecretRepository } from '@lune/db-access';
+import { WorkflowRepository } from '@lunie/db-access';
+import { PrismaService } from '@lunie/db-access';
+import { SecretRepository } from '@lunie/db-access';
 import {
   createWorkflowRepositoryMock,
   type WorkflowRepositoryMock,

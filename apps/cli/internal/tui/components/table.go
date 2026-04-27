@@ -5,7 +5,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/x/ansi"
-	"github.com/gentij/lune/apps/cli/internal/tui/styles"
+	"github.com/gentij/lunie/apps/cli/internal/tui/styles"
 )
 
 func NewTable(columns []table.Column, rows []table.Row, width int, height int, styleSet styles.StyleSet) table.Model {

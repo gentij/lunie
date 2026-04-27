@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import type { Prisma, Workflow, WorkflowVersion } from '@prisma/client';
-import { WorkflowDefinitionSchema } from '@lune/contracts';
+import { WorkflowDefinitionSchema } from '@lunie/contracts';
 import {
   SecretRepository,
   WorkflowRepository,
   PrismaService,
-} from '@lune/db-access';
+} from '@lunie/db-access';
 import { ErrorDefinitions } from 'src/common/http/errors/error-codes';
 import { AppError } from 'src/common/http/errors/app-error';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/gentij/lune/apps/cli/internal/config"
+	"github.com/gentij/lunie/apps/cli/internal/config"
 )
 
 func loadConfig(serverFlagChanged bool) (config.Config, string, error) {

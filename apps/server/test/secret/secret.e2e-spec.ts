@@ -27,7 +27,7 @@ import {
   createSecretFixture,
   createSecretListFixture,
 } from 'test/secret/secret.fixtures';
-import { SecretRepository } from '@lune/db-access';
+import { SecretRepository } from '@lunie/db-access';
 import { CryptoService } from 'src/crypto/crypto.service';
 
 describe('Secret (e2e)', () => {

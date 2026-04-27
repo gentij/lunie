@@ -1,4 +1,4 @@
-import { PrismaService } from '@lune/db-access';
+import { PrismaService } from '@lunie/db-access';
 import {
   createPrismaServiceMock,
   PrismaServiceMock,
