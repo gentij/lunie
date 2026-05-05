@@ -19,6 +19,10 @@ import {
 } from './workflow-definition.validator';
 import { cacheKeys } from 'src/cache/cache-keys';
 import { buildPaginationMeta } from 'src/common/pagination/pagination';
+import {
+  buildUniqueKey,
+  deriveReservedKey,
+} from 'src/common/identifiers/key.util';
 
 @Injectable()
 export class WorkflowService {
@@ -38,14 +42,29 @@ export class WorkflowService {
     );
     await this.validateDefinitionOrThrow(normalizedDefinition);
 
+    const existingWorkflows = await this.repo.findMany();
+    const workflowKey = buildUniqueKey(
+      params.name,
+      'workflow',
+      existingWorkflows.map((workflow) =>
+        deriveReservedKey({
+          key: workflow.key,
+          source: workflow.name,
+          fallback: 'workflow',
+        }),
+      ),
+    );
+    const manualTriggerKey = buildUniqueKey('Manual', 'manual', []);
+
     const created = await this.prisma.$transaction(async (tx) => {
       const workflow = await tx.workflow.create({
-        data: { name: params.name },
+        data: { name: params.name, key: workflowKey },
       });
 
       await tx.trigger.create({
         data: {
           workflowId: workflow.id,
+          key: manualTriggerKey,
           type: 'MANUAL',
           name: 'Manual',
           isActive: true,

@@ -18,6 +18,7 @@ export type PrismaTxMock = {
   trigger?: {
     create: jest.Mock;
     findFirst?: jest.Mock;
+    findMany?: jest.Mock;
   };
   event?: {
     create: jest.Mock;
@@ -32,6 +33,7 @@ export type PrismaTxMock = {
   };
   workflow: {
     create: jest.Mock;
+    findMany?: jest.Mock;
     update: jest.Mock;
   };
   workflowVersion: {

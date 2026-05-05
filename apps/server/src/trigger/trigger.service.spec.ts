@@ -58,10 +58,12 @@ describe('TriggerService', () => {
     const wf = createWorkflowFixture({ id: 'wf_1' });
     const created = createTriggerFixture({
       workflowId: 'wf_1',
+      key: 'webhook',
       type: 'WEBHOOK',
     });
 
     workflowRepo.findById.mockResolvedValue(wf);
+    repo.findManyByWorkflow.mockResolvedValue([]);
     repo.create.mockResolvedValue(created);
 
     await expect(
@@ -74,6 +76,7 @@ describe('TriggerService', () => {
 
     expect(repo.create).toHaveBeenCalledWith({
       workflow: { connect: { id: 'wf_1' } },
+      key: 'webhook',
       type: 'WEBHOOK',
       name: undefined,
       isActive: true,

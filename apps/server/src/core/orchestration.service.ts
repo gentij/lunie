@@ -5,6 +5,10 @@ import { StepRunJobPayload, WorkflowDefinition } from '@lunie/contracts';
 import type { JobsOptions } from 'bullmq';
 
 import { StepRunQueueService } from '../queue/step-run-queue.service';
+import {
+  buildUniqueKey,
+  deriveReservedKey,
+} from 'src/common/identifiers/key.util';
 
 interface StepDef {
   key: string;
@@ -103,9 +107,16 @@ export class OrchestrationService {
           overrides,
         );
 
+        const workflowSequence = await tx.workflow.update({
+          where: { id: workflowId },
+          data: { runSequence: { increment: 1 } },
+          select: { runSequence: true },
+        });
+
         const workflowRunData: Prisma.WorkflowRunUncheckedCreateInput = {
           workflowId,
           workflowVersionId,
+          number: workflowSequence.runSequence,
           triggerId: triggerIdToUse,
           eventId: event.id,
           status: 'QUEUED',
@@ -354,9 +365,26 @@ export class OrchestrationService {
 
     if (manual) return manual.id;
 
+    const existingTriggers = await tx.trigger.findMany({
+      where: { workflowId: params.workflowId },
+      select: { key: true, name: true, type: true },
+    });
+    const manualTriggerKey = buildUniqueKey(
+      'Manual',
+      'manual',
+      existingTriggers.map((trigger) =>
+        deriveReservedKey({
+          key: trigger.key,
+          source: trigger.name ?? trigger.type,
+          fallback: trigger.type.toLowerCase(),
+        }),
+      ),
+    );
+
     const created = await tx.trigger.create({
       data: {
         workflowId: params.workflowId,
+        key: manualTriggerKey,
         type: 'MANUAL',
         name: 'Manual',
         isActive: true,
