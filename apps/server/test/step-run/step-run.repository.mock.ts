@@ -16,6 +16,10 @@ export type StepRunRepositoryMock = {
     ]
   >;
   findById: jest.Mock<Promise<StepRun | null>, [string]>;
+  findByWorkflowRunAndStepKey: jest.Mock<
+    Promise<StepRun | null>,
+    [string, string]
+  >;
   update: jest.Mock<Promise<StepRun>, [string, any]>;
 };
 
@@ -35,5 +39,9 @@ export const createStepRunRepositoryMock = (): StepRunRepositoryMock => ({
     ]
   >(),
   findById: jest.fn<Promise<StepRun | null>, [string]>(),
+  findByWorkflowRunAndStepKey: jest.fn<
+    Promise<StepRun | null>,
+    [string, string]
+  >(),
   update: jest.fn<Promise<StepRun>, [string, any]>(),
 });

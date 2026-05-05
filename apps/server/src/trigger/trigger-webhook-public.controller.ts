@@ -23,14 +23,17 @@ export class TriggerWebhookPublicController {
     errors: [400, 401, 404, 500],
   })
   @Public()
-  @Post(':workflowId/:triggerId/:webhookKey')
+  @Post(':workflowRef/:triggerRef/:webhookKey')
   async handleWebhook(
-    @Param('workflowId') workflowId: string,
-    @Param('triggerId') triggerId: string,
+    @Param('workflowRef') workflowRef: string,
+    @Param('triggerRef') triggerRef: string,
     @Param('webhookKey') webhookKey: string,
     @Body() body: unknown,
   ): Promise<{ status: 'accepted' | 'trigger_inactive' }> {
-    const trigger = await this.triggerService.get(workflowId, triggerId);
+    const { workflow, trigger } = await this.resolveWorkflowAndTrigger(
+      workflowRef,
+      triggerRef,
+    );
     this.triggerService.assertWebhookTriggerType(trigger);
 
     if (!this.triggerService.hasWebhookKey(trigger)) {
@@ -49,7 +52,6 @@ export class TriggerWebhookPublicController {
       return { status: 'trigger_inactive' };
     }
 
-    const workflow = await this.workflowService.get(workflowId);
     if (!workflow.latestVersionId) {
       throw new Error('Workflow has no versions');
     }
@@ -57,9 +59,9 @@ export class TriggerWebhookPublicController {
     const input = normalizeWebhookInput(body);
 
     await this.orchestrationService.startWorkflow({
-      workflowId,
+      workflowId: workflow.id,
       workflowVersionId: workflow.latestVersionId,
-      triggerId,
+      triggerId: trigger.id,
       eventType: 'WEBHOOK',
       eventPayload: input,
       input,
@@ -67,6 +69,40 @@ export class TriggerWebhookPublicController {
     });
 
     return { status: 'accepted' };
+  }
+
+  private async resolveWorkflowAndTrigger(
+    workflowRef: string,
+    triggerRef: string,
+  ) {
+    try {
+      const workflow = await this.workflowService.getByKey(workflowRef);
+      if (!workflow) {
+        throw AppError.notFound(ErrorDefinitions.WORKFLOW.NOT_FOUND);
+      }
+      const trigger = await this.triggerService.getByKey(
+        workflow.id,
+        triggerRef,
+      );
+      if (!trigger) {
+        throw AppError.notFound(ErrorDefinitions.TRIGGER.NOT_FOUND);
+      }
+      return { workflow, trigger };
+    } catch (error) {
+      if (
+        !(error instanceof AppError) ||
+        error.code !== ErrorDefinitions.WORKFLOW.NOT_FOUND.code
+      ) {
+        throw error;
+      }
+    }
+
+    const workflow = await this.workflowService.get(workflowRef);
+    if (!workflow) {
+      throw AppError.notFound(ErrorDefinitions.WORKFLOW.NOT_FOUND);
+    }
+    const trigger = await this.triggerService.get(workflow.id, triggerRef);
+    return { workflow, trigger };
   }
 }
 

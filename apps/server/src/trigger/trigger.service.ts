@@ -119,6 +119,17 @@ export class TriggerService {
     return trigger;
   }
 
+  async getByKey(workflowId: string, key: string): Promise<Trigger> {
+    await this.assertWorkflowExists(workflowId);
+    const trigger = await this.repo.findByWorkflowAndKey(workflowId, key);
+
+    if (!trigger) {
+      throw AppError.notFound(ErrorDefinitions.TRIGGER.NOT_FOUND);
+    }
+
+    return trigger;
+  }
+
   async delete(workflowId: string, id: string): Promise<Trigger> {
     await this.assertWorkflowExists(workflowId);
     const trigger = await this.repo.findById(id);

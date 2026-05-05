@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma.service';
-import type { Prisma, Workflow } from '@prisma/client';
+import { Injectable } from "@nestjs/common";
+import { PrismaService } from "../prisma.service";
+import type { Prisma, Workflow } from "@prisma/client";
 
 @Injectable()
 export class WorkflowRepository {
@@ -11,18 +11,18 @@ export class WorkflowRepository {
   }
 
   findMany(): Promise<Workflow[]> {
-    return this.prisma.workflow.findMany({ orderBy: { createdAt: 'desc' } });
+    return this.prisma.workflow.findMany({ orderBy: { createdAt: "desc" } });
   }
 
   async findPage(params: {
     page: number;
     pageSize: number;
-    sortBy: 'createdAt' | 'updatedAt';
-    sortOrder: 'asc' | 'desc';
+    sortBy: "createdAt" | "updatedAt";
+    sortOrder: "asc" | "desc";
   }): Promise<{ items: Workflow[]; total: number }> {
     const skip = (params.page - 1) * params.pageSize;
     const orderBy =
-      params.sortBy === 'updatedAt'
+      params.sortBy === "updatedAt"
         ? [{ updatedAt: params.sortOrder }, { id: params.sortOrder }]
         : [{ createdAt: params.sortOrder }, { id: params.sortOrder }];
     const [items, total] = await Promise.all([
@@ -39,6 +39,10 @@ export class WorkflowRepository {
 
   findById(id: string): Promise<Workflow | null> {
     return this.prisma.workflow.findUnique({ where: { id } });
+  }
+
+  findByKey(key: string): Promise<Workflow | null> {
+    return this.prisma.workflow.findUnique({ where: { key } });
   }
 
   update(id: string, data: Prisma.WorkflowUpdateInput): Promise<Workflow> {

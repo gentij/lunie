@@ -13,7 +13,9 @@ import { ZodSerializerInterceptor, ZodValidationPipe } from 'nestjs-zod';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 import { WorkflowVersionController } from 'src/workflow-version/workflow-version.controller';
+import { WorkflowVersionKeyController } from 'src/workflow-version/workflow-version-key.controller';
 import { WorkflowVersionService } from 'src/workflow-version/workflow-version.service';
+import { WorkflowService } from 'src/workflow/workflow.service';
 
 import { AllExceptionsFilter } from 'src/common/http/filters/all-exceptions.filter';
 import { ResponseInterceptor } from 'src/common/http/interceptors/response.interceptor';
@@ -42,17 +44,20 @@ describe('WorkflowVersion (e2e)', () => {
   let app: NestFastifyApplication;
   let repo: WorkflowVersionRepositoryMock;
   let workflowRepo: WorkflowRepositoryMock;
+  let workflowService: { getByKey: jest.Mock };
 
   beforeEach(async () => {
     repo = createWorkflowVersionRepositoryMock();
     workflowRepo = createWorkflowRepositoryMock();
+    workflowService = { getByKey: jest.fn() };
 
     const moduleRef = await Test.createTestingModule({
-      controllers: [WorkflowVersionController],
+      controllers: [WorkflowVersionController, WorkflowVersionKeyController],
       providers: [
         WorkflowVersionService,
         { provide: WorkflowVersionRepository, useValue: repo },
         { provide: WorkflowRepository, useValue: workflowRepo },
+        { provide: WorkflowService, useValue: workflowService },
         { provide: CACHE_MANAGER, useValue: createCacheManagerMock() },
 
         { provide: APP_PIPE, useClass: ZodValidationPipe },
@@ -114,6 +119,28 @@ describe('WorkflowVersion (e2e)', () => {
 
     expect(res.statusCode).toBe(200);
 
+    const body = res.json();
+    expect(body.ok).toBe(true);
+    expect(body.data.version).toBe(1);
+  });
+
+  it('GET /workflows/by-key/:workflowKey/versions/:version -> 200 when found', async () => {
+    const workflow = createWorkflowFixture({ id: 'wf_1', key: 'deploy-api' });
+    const version = createWorkflowVersionFixture({
+      workflowId: 'wf_1',
+      version: 1,
+    });
+
+    workflowService.getByKey.mockResolvedValue(workflow);
+    workflowRepo.findById.mockResolvedValue(workflow);
+    repo.findByWorkflowAndVersion.mockResolvedValue(version);
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/workflows/by-key/deploy-api/versions/1',
+    });
+
+    expect(res.statusCode).toBe(200);
     const body = res.json();
     expect(body.ok).toBe(true);
     expect(body.data.version).toBe(1);

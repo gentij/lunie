@@ -189,6 +189,23 @@ describe('Workflow (e2e)', () => {
     expect(body.data.key).toBe('deploy-on-release');
   });
 
+  it('GET /workflows/by-key/:workflowKey -> 200 when found', async () => {
+    const wf = createWorkflowFixture({ id: 'wf_1', key: 'deploy-on-release' });
+    repo.findByKey.mockResolvedValue(wf);
+    repo.findById.mockResolvedValue(wf);
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/workflows/by-key/deploy-on-release',
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.ok).toBe(true);
+    expect(body.data.id).toBe('wf_1');
+    expect(body.data.key).toBe('deploy-on-release');
+  });
+
   it('GET /workflows/:id -> 404 with standardized error payload', async () => {
     repo.findById.mockResolvedValue(null);
 

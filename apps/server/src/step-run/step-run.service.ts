@@ -12,9 +12,15 @@ export class StepRunService {
     private readonly runRepo: WorkflowRunRepository,
   ) {}
 
-  private async assertWorkflowRunExists(workflowRunId: string) {
+  private async assertWorkflowRunExists(
+    workflowRunId: string,
+    workflowId?: string,
+  ) {
     const run = await this.runRepo.findById(workflowRunId);
     if (!run) throw AppError.notFound(ErrorDefinitions.WORKFLOW_RUN.NOT_FOUND);
+    if (workflowId && run.workflowId !== workflowId) {
+      throw AppError.notFound(ErrorDefinitions.WORKFLOW_RUN.NOT_FOUND);
+    }
     return run;
   }
 
@@ -51,6 +57,7 @@ export class StepRunService {
   }
 
   async list(params: {
+    workflowId: string;
     workflowRunId: string;
     page: number;
     pageSize: number;
@@ -60,7 +67,7 @@ export class StepRunService {
     items: StepRun[];
     pagination: ReturnType<typeof buildPaginationMeta>;
   }> {
-    await this.assertWorkflowRunExists(params.workflowRunId);
+    await this.assertWorkflowRunExists(params.workflowRunId, params.workflowId);
     const { items, total } = await this.repo.findPageByWorkflowRun(params);
     return {
       items,
@@ -74,12 +81,34 @@ export class StepRunService {
     };
   }
 
-  async get(workflowRunId: string, id: string): Promise<StepRun> {
-    await this.assertWorkflowRunExists(workflowRunId);
+  async get(
+    workflowId: string,
+    workflowRunId: string,
+    id: string,
+  ): Promise<StepRun> {
+    await this.assertWorkflowRunExists(workflowRunId, workflowId);
     const step = await this.repo.findById(id);
 
     if (!step || step.workflowRunId !== workflowRunId)
       throw AppError.notFound(ErrorDefinitions.STEP_RUN.NOT_FOUND);
+
+    return step;
+  }
+
+  async getByStepKey(
+    workflowId: string,
+    workflowRunId: string,
+    stepKey: string,
+  ): Promise<StepRun> {
+    await this.assertWorkflowRunExists(workflowRunId, workflowId);
+    const step = await this.repo.findByWorkflowRunAndStepKey(
+      workflowRunId,
+      stepKey,
+    );
+
+    if (!step) {
+      throw AppError.notFound(ErrorDefinitions.STEP_RUN.NOT_FOUND);
+    }
 
     return step;
   }
@@ -100,7 +129,11 @@ export class StepRunService {
       finishedAt?: Date;
     },
   ): Promise<StepRun> {
-    await this.get(workflowRunId, id);
+    await this.assertWorkflowRunExists(workflowRunId);
+    const step = await this.repo.findById(id);
+    if (!step || step.workflowRunId !== workflowRunId) {
+      throw AppError.notFound(ErrorDefinitions.STEP_RUN.NOT_FOUND);
+    }
     return this.repo.update(id, patch);
   }
 }

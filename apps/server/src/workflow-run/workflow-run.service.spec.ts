@@ -120,6 +120,21 @@ describe('WorkflowRunService', () => {
     expect(repo.findById).toHaveBeenCalledWith('wfr_1');
   });
 
+  it('getByNumber() returns run when found', async () => {
+    const wf = createWorkflowFixture({ id: 'wf_1' });
+    const run = createWorkflowRunFixture({
+      id: 'wfr_1',
+      workflowId: 'wf_1',
+      number: 42,
+    });
+
+    workflowRepo.findById.mockResolvedValue(wf);
+    repo.findByWorkflowAndNumber.mockResolvedValue(run);
+
+    await expect(service.getByNumber('wf_1', 42)).resolves.toBe(run);
+    expect(repo.findByWorkflowAndNumber).toHaveBeenCalledWith('wf_1', 42);
+  });
+
   it('get() throws notFound when run missing', async () => {
     const wf = createWorkflowFixture({ id: 'wf_1' });
     workflowRepo.findById.mockResolvedValue(wf);

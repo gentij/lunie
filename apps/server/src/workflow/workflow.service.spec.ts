@@ -172,6 +172,16 @@ describe('WorkflowService', () => {
     expect(repo.findById).toHaveBeenCalledWith('wf_x');
   });
 
+  it('getByKey() resolves workflow and reuses id lookup', async () => {
+    const wf = createWorkflowFixture({ id: 'wf_x', key: 'deploy-api' });
+    repo.findByKey.mockResolvedValue(wf);
+    repo.findById.mockResolvedValue(wf);
+
+    await expect(service.getByKey('deploy-api')).resolves.toBe(wf);
+    expect(repo.findByKey).toHaveBeenCalledWith('deploy-api');
+    expect(repo.findById).toHaveBeenCalledWith('wf_x');
+  });
+
   it('get() throws AppError.notFound when missing', async () => {
     repo.findById.mockResolvedValue(null);
 

@@ -12,6 +12,7 @@ import {
 import { ZodSerializerInterceptor, ZodValidationPipe } from 'nestjs-zod';
 
 import { TriggerController } from 'src/trigger/trigger.controller';
+import { TriggerKeyController } from 'src/trigger/trigger-key.controller';
 import { TriggerService } from 'src/trigger/trigger.service';
 import { OrchestrationService } from 'src/core/orchestration.service';
 import { WorkflowService } from 'src/workflow/workflow.service';
@@ -40,13 +41,15 @@ describe('Trigger (e2e)', () => {
   let app: NestFastifyApplication;
   let repo: TriggerRepositoryMock;
   let workflowRepo: WorkflowRepositoryMock;
+  let workflowService: { get: jest.Mock; getByKey: jest.Mock };
 
   beforeEach(async () => {
     repo = createTriggerRepositoryMock();
     workflowRepo = createWorkflowRepositoryMock();
+    workflowService = { get: jest.fn(), getByKey: jest.fn() };
 
     const moduleRef = await Test.createTestingModule({
-      controllers: [TriggerController],
+      controllers: [TriggerController, TriggerKeyController],
       providers: [
         TriggerService,
         {
@@ -55,7 +58,7 @@ describe('Trigger (e2e)', () => {
         },
         {
           provide: WorkflowService,
-          useValue: { get: jest.fn() },
+          useValue: workflowService,
         },
         {
           provide: CryptoService,
@@ -156,6 +159,30 @@ describe('Trigger (e2e)', () => {
     expect(body.ok).toBe(true);
     expect(body.data.id).toBe('tr_1');
     expect(body.data.key).toBe('manual-trigger');
+  });
+
+  it('GET /workflows/by-key/:workflowKey/triggers/by-key/:triggerKey -> 200 when found', async () => {
+    const workflow = createWorkflowFixture({ id: 'wf_1', key: 'deploy-api' });
+    const trigger = createTriggerFixture({
+      id: 'tr_1',
+      workflowId: 'wf_1',
+      key: 'nightly',
+    });
+
+    workflowService.getByKey.mockResolvedValue(workflow);
+    workflowRepo.findById.mockResolvedValue(workflow);
+    repo.findByWorkflowAndKey.mockResolvedValue(trigger);
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/workflows/by-key/deploy-api/triggers/by-key/nightly',
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.ok).toBe(true);
+    expect(body.data.id).toBe('tr_1');
+    expect(body.data.key).toBe('nightly');
   });
 
   it('PATCH /workflows/:workflowId/triggers/:id -> 200 updates trigger', async () => {

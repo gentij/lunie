@@ -235,6 +235,15 @@ export class WorkflowService {
     return wf;
   }
 
+  async getByKey(key: string): Promise<Workflow> {
+    const workflow = await this.repo.findByKey(key);
+    if (!workflow) {
+      throw AppError.notFound(ErrorDefinitions.WORKFLOW.NOT_FOUND);
+    }
+
+    return this.get(workflow.id);
+  }
+
   async update(
     id: string,
     patch: { name?: string; isActive?: boolean },

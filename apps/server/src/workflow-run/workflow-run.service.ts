@@ -82,6 +82,17 @@ export class WorkflowRunService {
     return run;
   }
 
+  async getByNumber(workflowId: string, number: number): Promise<WorkflowRun> {
+    await this.assertWorkflowExists(workflowId);
+    const run = await this.repo.findByWorkflowAndNumber(workflowId, number);
+
+    if (!run) {
+      throw AppError.notFound(ErrorDefinitions.WORKFLOW_RUN.NOT_FOUND);
+    }
+
+    return run;
+  }
+
   async update(
     workflowId: string,
     id: string,

@@ -87,7 +87,12 @@ describe('StepRunService', () => {
     repo.findPageByWorkflowRun.mockResolvedValue({ items: list, total: 2 });
 
     await expect(
-      service.list({ workflowRunId: 'wfr_1', page: 1, pageSize: 25 }),
+      service.list({
+        workflowId: 'wf_1',
+        workflowRunId: 'wfr_1',
+        page: 1,
+        pageSize: 25,
+      }),
     ).resolves.toEqual({
       items: list,
       pagination: {
@@ -100,6 +105,7 @@ describe('StepRunService', () => {
       },
     });
     expect(repo.findPageByWorkflowRun).toHaveBeenCalledWith({
+      workflowId: 'wf_1',
       workflowRunId: 'wfr_1',
       page: 1,
       pageSize: 25,
@@ -113,7 +119,7 @@ describe('StepRunService', () => {
     runRepo.findById.mockResolvedValue(run);
     repo.findById.mockResolvedValue(step);
 
-    await expect(service.get('wfr_1', 'sr_1')).resolves.toBe(step);
+    await expect(service.get('wf_1', 'wfr_1', 'sr_1')).resolves.toBe(step);
     expect(repo.findById).toHaveBeenCalledWith('sr_1');
   });
 
@@ -122,9 +128,9 @@ describe('StepRunService', () => {
     runRepo.findById.mockResolvedValue(run);
     repo.findById.mockResolvedValue(null);
 
-    await expect(service.get('wfr_1', 'missing')).rejects.toBeInstanceOf(
-      AppError,
-    );
+    await expect(
+      service.get('wf_1', 'wfr_1', 'missing'),
+    ).rejects.toBeInstanceOf(AppError);
   });
 
   it('get() throws notFound when step run belongs to another run', async () => {
@@ -134,7 +140,29 @@ describe('StepRunService', () => {
     runRepo.findById.mockResolvedValue(run);
     repo.findById.mockResolvedValue(step);
 
-    await expect(service.get('wfr_1', 'sr_1')).rejects.toBeInstanceOf(AppError);
+    await expect(service.get('wf_1', 'wfr_1', 'sr_1')).rejects.toBeInstanceOf(
+      AppError,
+    );
+  });
+
+  it('getByStepKey() returns step run when found', async () => {
+    const run = createWorkflowRunFixture({ id: 'wfr_1', workflowId: 'wf_1' });
+    const step = createStepRunFixture({
+      id: 'sr_1',
+      workflowRunId: 'wfr_1',
+      stepKey: 'fetch_post',
+    });
+
+    runRepo.findById.mockResolvedValue(run);
+    repo.findByWorkflowRunAndStepKey.mockResolvedValue(step);
+
+    await expect(
+      service.getByStepKey('wf_1', 'wfr_1', 'fetch_post'),
+    ).resolves.toBe(step);
+    expect(repo.findByWorkflowRunAndStepKey).toHaveBeenCalledWith(
+      'wfr_1',
+      'fetch_post',
+    );
   });
 
   it('update() updates step run after existence check', async () => {

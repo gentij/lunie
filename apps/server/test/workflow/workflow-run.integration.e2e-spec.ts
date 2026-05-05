@@ -115,4 +115,38 @@ describe('Workflow Run (integration e2e)', () => {
       }),
     );
   });
+
+  it('POST /workflows/by-key/:workflowKey/run resolves workflow by key', async () => {
+    const workflow = createWorkflowFixture({
+      id: 'wf_1',
+      key: 'deploy-api',
+      latestVersionId: 'wfv_1',
+    });
+    repo.findByKey.mockResolvedValue(workflow);
+    repo.findById.mockResolvedValue(workflow);
+    orchestration.startWorkflow.mockResolvedValue({
+      workflowRunId: 'wfr_2',
+      workflowRunNumber: 9,
+      stepRunIds: [],
+    });
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/workflows/by-key/deploy-api/run',
+      payload: { input: { hello: 'world' }, overrides: {} },
+    });
+
+    expect(res.statusCode).toBe(201);
+    const body = res.json();
+    expect(body.ok).toBe(true);
+    expect(body.data.workflowRunId).toBe('wfr_2');
+    expect(body.data.workflowRunNumber).toBe(9);
+    expect(orchestration.startWorkflow).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workflowId: 'wf_1',
+        workflowVersionId: 'wfv_1',
+        eventType: 'MANUAL',
+      }),
+    );
+  });
 });

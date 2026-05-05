@@ -16,6 +16,7 @@ export type TriggerRepositoryMock = {
     ]
   >;
   findById: jest.Mock<Promise<Trigger | null>, [string]>;
+  findByWorkflowAndKey: jest.Mock<Promise<Trigger | null>, [string, string]>;
   update: jest.Mock<Promise<Trigger>, [string, any]>;
   softDelete: jest.Mock<Promise<Trigger>, [string]>;
 };
@@ -36,6 +37,7 @@ export const createTriggerRepositoryMock = (): TriggerRepositoryMock => ({
     ]
   >(),
   findById: jest.fn<Promise<Trigger | null>, [string]>(),
+  findByWorkflowAndKey: jest.fn<Promise<Trigger | null>, [string, string]>(),
   update: jest.fn<Promise<Trigger>, [string, any]>(),
   softDelete: jest.fn<Promise<Trigger>, [string]>(),
 });

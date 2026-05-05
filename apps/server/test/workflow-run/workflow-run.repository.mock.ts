@@ -16,6 +16,10 @@ export type WorkflowRunRepositoryMock = {
     ]
   >;
   findById: jest.Mock<Promise<WorkflowRun | null>, [string]>;
+  findByWorkflowAndNumber: jest.Mock<
+    Promise<WorkflowRun | null>,
+    [string, number]
+  >;
   update: jest.Mock<Promise<WorkflowRun>, [string, any]>;
 };
 
@@ -36,5 +40,9 @@ export const createWorkflowRunRepositoryMock =
       ]
     >(),
     findById: jest.fn<Promise<WorkflowRun | null>, [string]>(),
+    findByWorkflowAndNumber: jest.fn<
+      Promise<WorkflowRun | null>,
+      [string, number]
+    >(),
     update: jest.fn<Promise<WorkflowRun>, [string, any]>(),
   });

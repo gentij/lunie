@@ -23,7 +23,11 @@ export class StepRunController {
     @Param('runId') runId: string,
     @Query() query: StepRunListQueryDto,
   ) {
-    return this.service.list({ workflowRunId: runId, ...query });
+    return this.service.list({
+      workflowId,
+      workflowRunId: runId,
+      ...query,
+    });
   }
 
   @ApiEnvelope(StepRunResDto, {
@@ -36,6 +40,6 @@ export class StepRunController {
     @Param('runId') runId: string,
     @Param('id') id: string,
   ) {
-    return this.service.get(runId, id);
+    return this.service.get(workflowId, runId, id);
   }
 }

@@ -20,6 +20,7 @@ describe('WorkflowController', () => {
             create: jest.fn(),
             list: jest.fn(),
             get: jest.fn(),
+            getByKey: jest.fn(),
             update: jest.fn(),
             delete: jest.fn(),
             createVersion: jest.fn(),
@@ -91,6 +92,14 @@ describe('WorkflowController', () => {
 
     await expect(controller.get('wf_1')).resolves.toBe(wf);
     expect(getSpy).toHaveBeenCalledWith('wf_1');
+  });
+
+  it('getByKey() calls WorkflowService.getByKey()', async () => {
+    const wf = createWorkflowFixture({ id: 'wf_1', key: 'deploy-api' });
+    const getSpy = jest.spyOn(service, 'getByKey').mockResolvedValue(wf as any);
+
+    await expect(controller.getByKey('deploy-api')).resolves.toBe(wf);
+    expect(getSpy).toHaveBeenCalledWith('deploy-api');
   });
 
   it('update() calls WorkflowService.update()', async () => {
@@ -191,6 +200,42 @@ describe('WorkflowController', () => {
       overrides: {
         step_1: { body: { content: 'dynamic' } },
       },
+    });
+  });
+
+  it('runManualByKey() resolves workflow by key before starting run', async () => {
+    const wf = createWorkflowFixture({
+      id: 'wf_1',
+      key: 'deploy-api',
+      latestVersionId: 'wfv_1',
+    });
+    jest.spyOn(service, 'getByKey').mockResolvedValue(wf as any);
+
+    const startSpy = jest
+      .spyOn(orchestrationService, 'startWorkflow')
+      .mockResolvedValue({
+        workflowRunId: 'wfr_1',
+        workflowRunNumber: 8,
+        stepRunIds: [],
+      });
+
+    await expect(
+      controller.runManualByKey('deploy-api', {
+        input: { hello: 'world' },
+        overrides: {},
+      }),
+    ).resolves.toEqual({
+      workflowRunId: 'wfr_1',
+      workflowRunNumber: 8,
+      status: 'QUEUED',
+    });
+
+    expect(startSpy).toHaveBeenCalledWith({
+      workflowId: 'wf_1',
+      workflowVersionId: 'wfv_1',
+      eventType: 'MANUAL',
+      input: { hello: 'world' },
+      overrides: {},
     });
   });
 });

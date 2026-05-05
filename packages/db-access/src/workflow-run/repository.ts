@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import type { Prisma, WorkflowRun } from '@prisma/client';
-import { PrismaService } from '../prisma.service';
+import { Injectable } from "@nestjs/common";
+import type { Prisma, WorkflowRun } from "@prisma/client";
+import { PrismaService } from "../prisma.service";
 
 @Injectable()
 export class WorkflowRunRepository {
@@ -13,7 +13,7 @@ export class WorkflowRunRepository {
   findManyByWorkflow(workflowId: string): Promise<WorkflowRun[]> {
     return this.prisma.workflowRun.findMany({
       where: { workflowId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
   }
 
@@ -21,12 +21,12 @@ export class WorkflowRunRepository {
     workflowId: string;
     page: number;
     pageSize: number;
-    sortBy: 'createdAt' | 'updatedAt';
-    sortOrder: 'asc' | 'desc';
+    sortBy: "createdAt" | "updatedAt";
+    sortOrder: "asc" | "desc";
   }): Promise<{ items: WorkflowRun[]; total: number }> {
     const skip = (params.page - 1) * params.pageSize;
     const orderBy =
-      params.sortBy === 'updatedAt'
+      params.sortBy === "updatedAt"
         ? [{ updatedAt: params.sortOrder }, { id: params.sortOrder }]
         : [{ createdAt: params.sortOrder }, { id: params.sortOrder }];
     const [items, total] = await Promise.all([
@@ -48,6 +48,15 @@ export class WorkflowRunRepository {
     return this.prisma.workflowRun.findUnique({ where: { id } });
   }
 
+  findByWorkflowAndNumber(
+    workflowId: string,
+    number: number,
+  ): Promise<WorkflowRun | null> {
+    return this.prisma.workflowRun.findUnique({
+      where: { workflowId_number: { workflowId, number } },
+    });
+  }
+
   update(
     id: string,
     data: Prisma.WorkflowRunUpdateInput,
@@ -59,10 +68,10 @@ export class WorkflowRunRepository {
     const result = await this.prisma.workflowRun.updateMany({
       where: {
         id,
-        status: 'QUEUED',
+        status: "QUEUED",
       },
       data: {
-        status: 'RUNNING',
+        status: "RUNNING",
         startedAt: new Date(),
       },
     });
@@ -72,14 +81,14 @@ export class WorkflowRunRepository {
 
   async finalizeIfOpen(
     id: string,
-    status: 'SUCCEEDED' | 'FAILED',
+    status: "SUCCEEDED" | "FAILED",
   ): Promise<boolean> {
     const result = await this.prisma.workflowRun.updateMany({
       where: {
         id,
         finishedAt: null,
         status: {
-          in: ['QUEUED', 'RUNNING'],
+          in: ["QUEUED", "RUNNING"],
         },
       },
       data: {
