@@ -29,7 +29,7 @@ describe('OrchestrationService', () => {
         create: jest.fn().mockResolvedValue({ id: 'ev_1' }),
       },
       workflowRun: {
-        create: jest.fn().mockResolvedValue({ id: 'wfr_1' }),
+        create: jest.fn().mockResolvedValue({ id: 'wfr_1', number: 1 }),
         update: jest.fn(),
       },
       workflowVersion: {
@@ -97,6 +97,7 @@ describe('OrchestrationService', () => {
 
     expect(result).toEqual({
       workflowRunId: 'wfr_1',
+      workflowRunNumber: 1,
       stepRunIds: ['sr_1', 'sr_2'],
     });
 
@@ -204,7 +205,7 @@ describe('OrchestrationService', () => {
         create: jest.fn().mockResolvedValue({ id: 'ev_1' }),
       },
       workflowRun: {
-        create: jest.fn().mockResolvedValue({ id: 'wfr_1' }),
+        create: jest.fn().mockResolvedValue({ id: 'wfr_1', number: 1 }),
         update: jest.fn(),
       },
       workflowVersion: {
@@ -287,7 +288,7 @@ describe('OrchestrationService', () => {
         create: jest.fn().mockResolvedValue({ id: 'ev_1' }),
       },
       workflowRun: {
-        create: jest.fn().mockResolvedValue({ id: 'wfr_1' }),
+        create: jest.fn().mockResolvedValue({ id: 'wfr_1', number: 1 }),
         update: jest.fn().mockResolvedValue({ id: 'wfr_1' }),
       },
       workflowVersion: {
@@ -366,7 +367,7 @@ describe('OrchestrationService', () => {
         create: jest.fn().mockResolvedValue({ id: 'ev_1' }),
       },
       workflowRun: {
-        create: jest.fn().mockResolvedValue({ id: 'wfr_1' }),
+        create: jest.fn().mockResolvedValue({ id: 'wfr_1', number: 1 }),
         update: jest.fn().mockResolvedValue({ id: 'wfr_1' }),
       },
       workflowVersion: {
@@ -404,7 +405,11 @@ describe('OrchestrationService', () => {
       eventType: 'MANUAL',
     });
 
-    expect(result).toEqual({ workflowRunId: 'wfr_1', stepRunIds: [] });
+    expect(result).toEqual({
+      workflowRunId: 'wfr_1',
+      workflowRunNumber: 1,
+      stepRunIds: [],
+    });
     expect(enqueueStepRun).not.toHaveBeenCalled();
     const workflowRunUpdate = tx.workflowRun?.update as jest.MockedFunction<
       (args: { where: { id: string }; data: { status?: string } }) => unknown
@@ -432,7 +437,7 @@ describe('OrchestrationService', () => {
         create: jest.fn().mockResolvedValue({ id: 'ev_1' }),
       },
       workflowRun: {
-        create: jest.fn().mockResolvedValue({ id: 'wfr_1' }),
+        create: jest.fn().mockResolvedValue({ id: 'wfr_1', number: 1 }),
         update: jest.fn(),
       },
       workflowVersion: {
@@ -543,7 +548,7 @@ describe('OrchestrationService', () => {
         create: jest.fn().mockResolvedValue({ id: 'ev_1' }),
       },
       workflowRun: {
-        create: jest.fn().mockResolvedValue({ id: 'wfr_1' }),
+        create: jest.fn().mockResolvedValue({ id: 'wfr_1', number: 1 }),
         update: jest.fn().mockResolvedValue({ id: 'wfr_1' }),
       },
       workflowVersion: {

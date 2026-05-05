@@ -91,7 +91,11 @@ describe('Workflow (e2e)', () => {
   });
 
   it('POST /workflows -> 201 + ok:true + data', async () => {
-    const created = createWorkflowFixture({ id: 'wf_new', name: 'My WF' });
+    const created = createWorkflowFixture({
+      id: 'wf_new',
+      key: 'my-wf',
+      name: 'My WF',
+    });
     const version = createWorkflowVersionFixture({
       workflowId: created.id,
       version: 1,
@@ -99,6 +103,7 @@ describe('Workflow (e2e)', () => {
     });
     const updated = createWorkflowFixture({
       id: created.id,
+      key: 'my-wf',
       name: 'My WF',
       latestVersionId: version.id,
     });
@@ -126,6 +131,7 @@ describe('Workflow (e2e)', () => {
       },
     };
 
+    repo.findMany.mockResolvedValue([]);
     prisma.$transaction.mockImplementation((cb) => Promise.resolve(cb(tx)));
 
     const res = await app.inject({
@@ -139,9 +145,10 @@ describe('Workflow (e2e)', () => {
     const body = res.json();
 
     expect(body.ok).toBe(true);
+    expect(body.data.key).toBe('my-wf');
     expect(body.data.name).toBe('My WF');
     expect(tx.workflow.create).toHaveBeenCalledWith({
-      data: { name: 'My WF' },
+      data: { name: 'My WF', key: 'my-wf' },
     });
   });
 
@@ -179,6 +186,7 @@ describe('Workflow (e2e)', () => {
     const body = res.json();
     expect(body.ok).toBe(true);
     expect(body.data.id).toBe('wf_1');
+    expect(body.data.key).toBeNull();
   });
 
   it('GET /workflows/:id -> 404 with standardized error payload', async () => {

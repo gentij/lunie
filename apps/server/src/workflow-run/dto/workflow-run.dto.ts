@@ -25,6 +25,7 @@ export const WorkflowRunResSchema = z.object({
   id: z.string(),
   workflowId: z.string(),
   workflowVersionId: z.string(),
+  number: z.number().int().nullable(),
   triggerId: z.string().nullable(),
   eventId: z.string().nullable(),
   status: WorkflowRunStatusSchema,

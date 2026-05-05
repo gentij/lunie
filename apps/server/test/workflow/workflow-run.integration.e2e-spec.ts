@@ -77,6 +77,7 @@ describe('Workflow Run (integration e2e)', () => {
     );
     orchestration.startWorkflow.mockResolvedValue({
       workflowRunId: 'wfr_1',
+      workflowRunNumber: 5,
       stepRunIds: [],
     });
 
@@ -97,6 +98,7 @@ describe('Workflow Run (integration e2e)', () => {
     const body = res.json();
     expect(body.ok).toBe(true);
     expect(body.data.workflowRunId).toBe('wfr_1');
+    expect(body.data.workflowRunNumber).toBe(5);
     expect(body.data.status).toBe('QUEUED');
 
     expect(orchestration.startWorkflow).toHaveBeenCalledWith(

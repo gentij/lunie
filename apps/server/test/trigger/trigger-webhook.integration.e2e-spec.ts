@@ -105,6 +105,7 @@ describe('Trigger Webhook (integration e2e)', () => {
     );
     orchestration.startWorkflow.mockResolvedValue({
       workflowRunId: 'wfr_1',
+      workflowRunNumber: 5,
       stepRunIds: [],
     });
 
@@ -165,6 +166,7 @@ describe('Trigger Webhook (integration e2e)', () => {
     );
     orchestration.startWorkflow.mockResolvedValue({
       workflowRunId: 'wfr_1',
+      workflowRunNumber: 5,
       stepRunIds: [],
     });
 

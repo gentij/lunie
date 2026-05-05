@@ -93,7 +93,11 @@ describe('WorkflowRun (e2e)', () => {
 
   it('GET /workflows/:workflowId/runs/:id -> 200 when found', async () => {
     const wf = createWorkflowFixture({ id: 'wf_1' });
-    const run = createWorkflowRunFixture({ id: 'wfr_1', workflowId: 'wf_1' });
+    const run = createWorkflowRunFixture({
+      id: 'wfr_1',
+      workflowId: 'wf_1',
+      number: 42,
+    });
 
     workflowRepo.findById.mockResolvedValue(wf);
     repo.findById.mockResolvedValue(run);
@@ -108,6 +112,7 @@ describe('WorkflowRun (e2e)', () => {
     const body = res.json();
     expect(body.ok).toBe(true);
     expect(body.data.id).toBe('wfr_1');
+    expect(body.data.number).toBe(42);
   });
 
   it('GET /workflows/:workflowId/runs/:id -> 404 when missing', async () => {

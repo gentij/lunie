@@ -144,14 +144,15 @@ export class WorkflowController {
       throw new Error('Workflow has no versions');
     }
 
-    const { workflowRunId } = await this.orchestrationService.startWorkflow({
-      workflowId,
-      workflowVersionId: workflow.latestVersionId,
-      eventType: 'MANUAL',
-      input,
-      overrides,
-    });
+    const { workflowRunId, workflowRunNumber } =
+      await this.orchestrationService.startWorkflow({
+        workflowId,
+        workflowVersionId: workflow.latestVersionId,
+        eventType: 'MANUAL',
+        input,
+        overrides,
+      });
 
-    return { workflowRunId, status: 'QUEUED' };
+    return { workflowRunId, workflowRunNumber, status: 'QUEUED' };
   }
 }

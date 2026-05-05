@@ -164,7 +164,11 @@ describe('WorkflowController', () => {
 
     const startSpy = jest
       .spyOn(orchestrationService, 'startWorkflow')
-      .mockResolvedValue({ workflowRunId: 'wfr_1', stepRunIds: [] });
+      .mockResolvedValue({
+        workflowRunId: 'wfr_1',
+        workflowRunNumber: 7,
+        stepRunIds: [],
+      });
 
     await expect(
       controller.runManual('wf_1', {
@@ -173,7 +177,11 @@ describe('WorkflowController', () => {
           step_1: { body: { content: 'dynamic' } },
         },
       }),
-    ).resolves.toEqual({ workflowRunId: 'wfr_1', status: 'QUEUED' });
+    ).resolves.toEqual({
+      workflowRunId: 'wfr_1',
+      workflowRunNumber: 7,
+      status: 'QUEUED',
+    });
 
     expect(startSpy).toHaveBeenCalledWith({
       workflowId: 'wf_1',

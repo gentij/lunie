@@ -93,11 +93,13 @@ describe('Trigger (e2e)', () => {
     const wf = createWorkflowFixture({ id: 'wf_1' });
     const created = createTriggerFixture({
       workflowId: 'wf_1',
+      key: 'webhook',
       type: 'WEBHOOK',
       config: { url: 'https://example.com' },
     });
 
     workflowRepo.findById.mockResolvedValue(wf);
+    repo.findManyByWorkflow.mockResolvedValue([]);
     repo.create.mockResolvedValue(created);
 
     const res = await app.inject({
@@ -110,6 +112,7 @@ describe('Trigger (e2e)', () => {
 
     const body = res.json();
     expect(body.ok).toBe(true);
+    expect(body.data.key).toBe('webhook');
     expect(body.data.type).toBe('WEBHOOK');
     expect(body.data.workflowId).toBe('wf_1');
   });
@@ -152,6 +155,7 @@ describe('Trigger (e2e)', () => {
     const body = res.json();
     expect(body.ok).toBe(true);
     expect(body.data.id).toBe('tr_1');
+    expect(body.data.key).toBeNull();
   });
 
   it('PATCH /workflows/:workflowId/triggers/:id -> 200 updates trigger', async () => {
