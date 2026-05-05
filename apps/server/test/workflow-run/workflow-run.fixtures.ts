@@ -11,7 +11,7 @@ export const createWorkflowRunFixture = (
     id: 'wfr_1',
     workflowId: 'wf_1',
     workflowVersionId: 'wfv_1',
-    number: null,
+    number: 1,
     triggerId: 'tr_1',
     eventId: 'ev_1',
     status: 'QUEUED' as WorkflowRunStatus,

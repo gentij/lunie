@@ -9,7 +9,7 @@ export const createWorkflowFixture = (
 
   return {
     id: 'wf_1',
-    key: null,
+    key: 'deploy-on-release',
     name: 'Deploy on Release',
     isActive: true,
     runSequence: 0,

@@ -186,7 +186,7 @@ describe('Workflow (e2e)', () => {
     const body = res.json();
     expect(body.ok).toBe(true);
     expect(body.data.id).toBe('wf_1');
-    expect(body.data.key).toBeNull();
+    expect(body.data.key).toBe('deploy-on-release');
   });
 
   it('GET /workflows/:id -> 404 with standardized error payload', async () => {

@@ -50,6 +50,7 @@ describe('WorkflowRunService', () => {
       service.create({
         workflowId: 'wf_1',
         workflowVersionId: 'wfv_1',
+        number: 1,
         status: 'QUEUED',
         input: { foo: 'bar' },
       }),
@@ -58,6 +59,7 @@ describe('WorkflowRunService', () => {
     expect(repo.create).toHaveBeenCalledWith({
       workflow: { connect: { id: 'wf_1' } },
       workflowVersion: { connect: { id: 'wfv_1' } },
+      number: 1,
       trigger: undefined,
       event: undefined,
       status: 'QUEUED',
@@ -72,7 +74,11 @@ describe('WorkflowRunService', () => {
     workflowRepo.findById.mockResolvedValue(null);
 
     await expect(
-      service.create({ workflowId: 'missing', workflowVersionId: 'wfv_1' }),
+      service.create({
+        workflowId: 'missing',
+        workflowVersionId: 'wfv_1',
+        number: 1,
+      }),
     ).rejects.toBeInstanceOf(AppError);
   });
 

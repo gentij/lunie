@@ -155,7 +155,7 @@ describe('Trigger (e2e)', () => {
     const body = res.json();
     expect(body.ok).toBe(true);
     expect(body.data.id).toBe('tr_1');
-    expect(body.data.key).toBeNull();
+    expect(body.data.key).toBe('manual-trigger');
   });
 
   it('PATCH /workflows/:workflowId/triggers/:id -> 200 updates trigger', async () => {

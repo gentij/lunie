@@ -537,11 +537,13 @@ describe('OrchestrationService', () => {
     const tx: PrismaTxMock = {
       trigger: {
         findFirst: jest.fn().mockResolvedValue(null),
-        findMany: jest
-          .fn()
-          .mockResolvedValue([
-            { key: null, name: 'Webhook Trigger', type: 'WEBHOOK' },
-          ]),
+        findMany: jest.fn().mockResolvedValue([
+          {
+            key: 'webhook-trigger',
+            name: 'Webhook Trigger',
+            type: 'WEBHOOK',
+          },
+        ]),
         create: jest.fn().mockResolvedValue({ id: 'tr_manual_created' }),
       },
       event: {

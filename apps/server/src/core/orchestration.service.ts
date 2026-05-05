@@ -51,7 +51,7 @@ export class OrchestrationService {
     >;
   }): Promise<{
     workflowRunId: string;
-    workflowRunNumber: number | null;
+    workflowRunNumber: number;
     stepRunIds: string[];
   }> {
     const {

@@ -21,6 +21,7 @@ export class WorkflowRunService {
   async create(params: {
     workflowId: string;
     workflowVersionId: string;
+    number: number;
     triggerId?: string;
     eventId?: string;
     status?: WorkflowRun['status'];
@@ -34,6 +35,7 @@ export class WorkflowRunService {
     return this.repo.create({
       workflow: { connect: { id: params.workflowId } },
       workflowVersion: { connect: { id: params.workflowVersionId } },
+      number: params.number,
       trigger: params.triggerId
         ? { connect: { id: params.triggerId } }
         : undefined,

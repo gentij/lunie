@@ -10,7 +10,7 @@ export const createTriggerFixture = (
   return {
     id: 'tr_1',
     workflowId: 'wf_1',
-    key: null,
+    key: 'manual-trigger',
     type: 'MANUAL' as TriggerType,
     name: 'Manual Trigger',
     isActive: true,

@@ -18,7 +18,7 @@ type Paginated[T any] struct {
 
 type Workflow struct {
 	ID              string  `json:"id"`
-	Key             *string `json:"key"`
+	Key             string  `json:"key"`
 	Name            string  `json:"name"`
 	IsActive        bool    `json:"isActive"`
 	LatestVersionID *string `json:"latestVersionId"`
@@ -37,7 +37,7 @@ type WorkflowVersion struct {
 type Trigger struct {
 	ID         string  `json:"id"`
 	WorkflowID string  `json:"workflowId"`
-	Key        *string `json:"key"`
+	Key        string  `json:"key"`
 	Type       string  `json:"type"`
 	Name       *string `json:"name"`
 	IsActive   bool    `json:"isActive"`
@@ -64,7 +64,7 @@ type WorkflowRun struct {
 	ID                string  `json:"id"`
 	WorkflowID        string  `json:"workflowId"`
 	WorkflowVersionID string  `json:"workflowVersionId"`
-	Number            *int    `json:"number"`
+	Number            int     `json:"number"`
 	TriggerID         *string `json:"triggerId"`
 	EventID           *string `json:"eventId"`
 	Status            string  `json:"status"`

@@ -15,7 +15,7 @@ export const TriggerListQuerySchema = PaginationQuerySchema.extend({
 export const TriggerResSchema = z.object({
   id: z.string(),
   workflowId: z.string(),
-  key: z.string().nullable(),
+  key: z.string(),
   type: TriggerTypeSchema,
   name: z.string().nullable(),
   isActive: z.boolean(),

@@ -29,7 +29,7 @@ model Secret {
 
 model Workflow {
   id          String  @id @default(cuid())
-  key         String?
+  key         String  @unique
   name        String
   isActive    Boolean @default(true)
   runSequence Int     @default(0)
@@ -57,7 +57,7 @@ enum TriggerType {
 model Trigger {
   id         String      @id @default(cuid())
   workflowId String
-  key        String?
+  key        String
   type       TriggerType
   name       String?
   isActive   Boolean     @default(true)
@@ -72,6 +72,7 @@ model Trigger {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([workflowId, key])
   @@index([workflowId])
   @@index([type])
   @@index([isActive])
@@ -112,7 +113,7 @@ model WorkflowRun {
   id                String            @id @default(cuid())
   workflowId        String
   workflowVersionId String
-  number            Int?
+  number            Int
   triggerId         String?
   eventId           String?           @unique
   status            WorkflowRunStatus @default(QUEUED)
@@ -132,6 +133,7 @@ model WorkflowRun {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([workflowId, number])
   @@index([workflowId])
   @@index([workflowVersionId])
   @@index([triggerId])

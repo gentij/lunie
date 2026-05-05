@@ -57,7 +57,7 @@ describe('WorkflowService', () => {
   it('create() creates a workflow', async () => {
     const existing = createWorkflowFixture({
       id: 'wf_existing',
-      key: null,
+      key: 'existing-workflow',
       name: 'Existing Workflow',
     });
     const wf = createWorkflowFixture({ name: 'My WF', key: 'my-wf' });
