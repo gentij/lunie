@@ -38,7 +38,7 @@ func init() {
 	listCmd.Flags().StringVar(&workflowListSortOrder, "sort-order", "desc", "Sort order (asc|desc)")
 
 	getCmd := &cobra.Command{
-		Use:   "get <workflow-id>",
+		Use:   "get <workflow-key>",
 		Short: "Get a workflow",
 		Args:  cobra.ExactArgs(1),
 		RunE:  workflowGet,
@@ -57,7 +57,7 @@ func init() {
 	_ = createCmd.MarkFlagRequired("definition")
 
 	updateCmd := &cobra.Command{
-		Use:   "update <workflow-id>",
+		Use:   "update <workflow-key>",
 		Short: "Update a workflow",
 		Args:  cobra.ExactArgs(1),
 		RunE:  workflowUpdate,
@@ -66,14 +66,14 @@ func init() {
 	updateCmd.Flags().BoolVar(&workflowUpdateIsActive, "is-active", false, "Set workflow active state")
 
 	deleteCmd := &cobra.Command{
-		Use:   "delete <workflow-id>",
+		Use:   "delete <workflow-key>",
 		Short: "Delete a workflow (soft)",
 		Args:  cobra.ExactArgs(1),
 		RunE:  workflowDelete,
 	}
 
 	runCmd := &cobra.Command{
-		Use:   "run <workflow-id>",
+		Use:   "run <workflow-key>",
 		Short: "Run a workflow",
 		Args:  cobra.ExactArgs(1),
 		RunE:  workflowRun,
@@ -88,7 +88,7 @@ func init() {
 	workflowCmd.AddCommand(workflowVersionCmd)
 
 	validateCmd := &cobra.Command{
-		Use:   "validate <workflow-id>",
+		Use:   "validate <workflow-key>",
 		Short: "Validate a workflow definition",
 		Args:  cobra.ExactArgs(1),
 		RunE:  workflowValidate,
@@ -115,7 +115,7 @@ func workflowList(cmd *cobra.Command, args []string) error {
 
 	if ctx.Quiet {
 		for _, item := range result.Items {
-			fmt.Fprintln(os.Stdout, item.ID)
+			fmt.Fprintln(os.Stdout, item.Key)
 		}
 		return nil
 	}
@@ -126,10 +126,10 @@ func workflowList(cmd *cobra.Command, args []string) error {
 		if item.LatestVersionID != nil {
 			latest = *item.LatestVersionID
 		}
-		rows = append(rows, []string{item.ID, item.Name, fmt.Sprintf("%t", item.IsActive), latest})
+		rows = append(rows, []string{item.Key, item.Name, fmt.Sprintf("%t", item.IsActive), latest})
 	}
 
-	return output.PrintListTable([]string{"ID", "NAME", "ACTIVE", "LATEST_VERSION"}, rows)
+	return output.PrintListTable([]string{"KEY", "NAME", "ACTIVE", "LATEST_VERSION"}, rows)
 }
 
 func workflowGet(cmd *cobra.Command, args []string) error {
@@ -138,7 +138,7 @@ func workflowGet(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("missing context")
 	}
 
-	result, err := ctx.Client.GetWorkflow(args[0])
+	result, err := ctx.Client.GetWorkflowByKey(args[0])
 	if err != nil {
 		return err
 	}
@@ -182,7 +182,7 @@ func workflowUpdate(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("no fields to update")
 	}
 
-	result, err := ctx.Client.UpdateWorkflow(args[0], patch)
+	result, err := ctx.Client.UpdateWorkflowByKey(args[0], patch)
 	if err != nil {
 		return err
 	}
@@ -196,7 +196,7 @@ func workflowDelete(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("missing context")
 	}
 
-	result, err := ctx.Client.DeleteWorkflow(args[0])
+	result, err := ctx.Client.DeleteWorkflowByKey(args[0])
 	if err != nil {
 		return err
 	}
@@ -220,7 +220,7 @@ func workflowRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	result, err := ctx.Client.RunWorkflow(args[0], input, overrides)
+	result, err := ctx.Client.RunWorkflowByKey(args[0], input, overrides)
 	if err != nil {
 		return err
 	}
@@ -229,11 +229,11 @@ func workflowRun(cmd *cobra.Command, args []string) error {
 		return output.PrintJSON(result)
 	}
 	if ctx.Quiet {
-		fmt.Fprintln(os.Stdout, result["workflowRunId"])
+		fmt.Fprintln(os.Stdout, result.WorkflowRunNumber)
 		return nil
 	}
 
-	return output.PrintKVTable([][2]string{{"workflowRunId", result["workflowRunId"]}, {"status", result["status"]}})
+	return output.PrintKVTable([][2]string{{"workflowRunNumber", fmt.Sprintf("%d", result.WorkflowRunNumber)}, {"workflowRunId", result.WorkflowRunID}, {"status", result.Status}})
 }
 
 func workflowValidate(cmd *cobra.Command, args []string) error {
@@ -247,7 +247,7 @@ func workflowValidate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	result, err := ctx.Client.ValidateWorkflow(args[0], definition)
+	result, err := ctx.Client.ValidateWorkflowByKey(args[0], definition)
 	if err != nil {
 		return err
 	}
@@ -274,7 +274,7 @@ func printWorkflow(ctx *Context, result api.Workflow) error {
 	}
 
 	if ctx.Quiet {
-		fmt.Fprintln(os.Stdout, result.ID)
+		fmt.Fprintln(os.Stdout, result.Key)
 		return nil
 	}
 
@@ -284,6 +284,7 @@ func printWorkflow(ctx *Context, result api.Workflow) error {
 	}
 
 	return output.PrintKVTable([][2]string{
+		{"key", result.Key},
 		{"id", result.ID},
 		{"name", result.Name},
 		{"isActive", fmt.Sprintf("%t", result.IsActive)},

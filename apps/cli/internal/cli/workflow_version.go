@@ -22,7 +22,7 @@ var workflowVersionCreateDefinition string
 
 func init() {
 	listCmd := &cobra.Command{
-		Use:   "list <workflow-id>",
+		Use:   "list <workflow-key>",
 		Short: "List workflow versions",
 		Args:  cobra.ExactArgs(1),
 		RunE:  workflowVersionList,
@@ -33,14 +33,14 @@ func init() {
 	listCmd.Flags().StringVar(&workflowVersionListSortOrder, "sort-order", "desc", "Sort order (asc|desc)")
 
 	getCmd := &cobra.Command{
-		Use:   "get <workflow-id> <version>",
+		Use:   "get <workflow-key> <version>",
 		Short: "Get a workflow version",
 		Args:  cobra.ExactArgs(2),
 		RunE:  workflowVersionGet,
 	}
 
 	createCmd := &cobra.Command{
-		Use:   "create <workflow-id>",
+		Use:   "create <workflow-key>",
 		Short: "Create a workflow version",
 		Args:  cobra.ExactArgs(1),
 		RunE:  workflowVersionCreate,
@@ -59,8 +59,8 @@ func workflowVersionList(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("missing context")
 	}
 
-	workflowID := args[0]
-	result, err := ctx.Client.ListWorkflowVersions(workflowID, workflowVersionListPage, workflowVersionListPageSize, workflowVersionListSortBy, workflowVersionListSortOrder)
+	workflowKey := args[0]
+	result, err := ctx.Client.ListWorkflowVersionsByKey(workflowKey, workflowVersionListPage, workflowVersionListPageSize, workflowVersionListSortBy, workflowVersionListSortOrder)
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func workflowVersionList(cmd *cobra.Command, args []string) error {
 	}
 	if ctx.Quiet {
 		for _, item := range result.Items {
-			fmt.Fprintln(os.Stdout, item.ID)
+			fmt.Fprintln(os.Stdout, item.Version)
 		}
 		return nil
 	}
@@ -91,9 +91,9 @@ func workflowVersionGet(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("missing context")
 	}
 
-	workflowID := args[0]
+	workflowKey := args[0]
 	version := args[1]
-	result, err := ctx.Client.GetWorkflowVersion(workflowID, version)
+	result, err := ctx.Client.GetWorkflowVersionByKey(workflowKey, version)
 	if err != nil {
 		return err
 	}
@@ -107,13 +107,13 @@ func workflowVersionCreate(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("missing context")
 	}
 
-	workflowID := args[0]
+	workflowKey := args[0]
 	definition, err := readJSONFile(workflowVersionCreateDefinition)
 	if err != nil {
 		return err
 	}
 
-	result, err := ctx.Client.CreateWorkflowVersion(workflowID, definition)
+	result, err := ctx.Client.CreateWorkflowVersionByKey(workflowKey, definition)
 	if err != nil {
 		return err
 	}
@@ -126,7 +126,7 @@ func printWorkflowVersion(ctx *Context, result api.WorkflowVersion) error {
 		return output.PrintJSON(result)
 	}
 	if ctx.Quiet {
-		fmt.Fprintln(os.Stdout, result.ID)
+		fmt.Fprintln(os.Stdout, result.Version)
 		return nil
 	}
 
