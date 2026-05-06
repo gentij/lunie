@@ -67,7 +67,7 @@ Lunie
 
 Webhook ingress supports a public path-key route for `WEBHOOK` triggers:
 
-- `POST /v1/api/hooks/:workflowId/:triggerId/:webhookKey`
+- `POST /v1/api/hooks/:workflowKey/:triggerKey/:webhookKey`
 
 Webhook keys are trigger-scoped and rotated by operators via CLI/API.
 

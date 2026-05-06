@@ -26,21 +26,21 @@ lunie workflow create --name "My Workflow" --definition definition.json
 Create a CRON trigger:
 
 ```bash
-lunie trigger create <workflow-id> --type CRON --name "Nightly" --config cron.json
+lunie trigger create my-workflow --type CRON --name "Nightly" --config cron.json
 ```
 
 Run a workflow and check runs/steps:
 
 ```bash
-lunie workflow run <workflow-id> --input input.json
-lunie run list <workflow-id>
-lunie step list <workflow-id> <run-id>
+lunie workflow run my-workflow --input input.json
+lunie run list my-workflow
+lunie step list my-workflow 1
 ```
 
 ## Global Flags
 
 - `--output table|json` (default: `table`)
-- `--quiet` (print IDs only)
+- `--quiet` (print command-ready refs only)
 - `--no-color` (disable colored status output)
 - `--server` (API base URL, default: `http://localhost:3000/v1/api`)
 - `--config` (config file path)
@@ -71,8 +71,8 @@ Examples:
 
 ```bash
 lunie workflow list --page 1 --page-size 25 --sort-by updatedAt --sort-order desc
-lunie run list <workflow-id> --sort-by createdAt --sort-order asc
-lunie workflow version list <workflow-id> --sort-by version --sort-order desc
+lunie run list my-workflow --sort-by createdAt --sort-order asc
+lunie workflow version list my-workflow --sort-by version --sort-order desc
 ```
 
 ## Auth
@@ -115,13 +115,13 @@ lunie stop
 
 ```bash
 lunie workflow list
-lunie workflow get <workflow-id>
+lunie workflow get my-workflow
 lunie workflow create --name "My Workflow" --definition definition.json
-lunie workflow update <workflow-id> --name "New Name"
-lunie workflow update <workflow-id> --is-active=false
-lunie workflow delete <workflow-id>
-lunie workflow run <workflow-id> --input input.json --overrides overrides.json
-lunie workflow validate <workflow-id> --definition definition.json
+lunie workflow update my-workflow --name "New Name"
+lunie workflow update my-workflow --is-active=false
+lunie workflow delete my-workflow
+lunie workflow run my-workflow --input input.json --overrides overrides.json
+lunie workflow validate my-workflow --definition definition.json
 ```
 
 Notes:
@@ -191,21 +191,21 @@ Notes:
 ## Workflow Versions
 
 ```bash
-lunie workflow version list <workflow-id>
-lunie workflow version get <workflow-id> <version>
-lunie workflow version create <workflow-id> --definition definition.json
+lunie workflow version list my-workflow
+lunie workflow version get my-workflow 2
+lunie workflow version create my-workflow --definition definition.json
 ```
 
 ## Triggers
 
 ```bash
-lunie trigger list <workflow-id>
-lunie trigger get <workflow-id> <trigger-id>
-lunie trigger create <workflow-id> --type CRON --name "Nightly" --config cron.json
-lunie trigger create <workflow-id> --type WEBHOOK --name "Inbound"
-lunie trigger webhook rotate-key <workflow-id> <trigger-id>
-lunie trigger update <workflow-id> <trigger-id> --is-active=false
-lunie trigger delete <workflow-id> <trigger-id>
+lunie trigger list my-workflow
+lunie trigger get my-workflow nightly
+lunie trigger create my-workflow --type CRON --name "Nightly" --config cron.json
+lunie trigger create my-workflow --type WEBHOOK --name "Inbound"
+lunie trigger webhook rotate-key my-workflow inbound
+lunie trigger update my-workflow nightly --is-active=false
+lunie trigger delete my-workflow nightly
 ```
 
 Sample `cron.json`:
@@ -220,25 +220,25 @@ Sample `cron.json`:
 ## Runs
 
 ```bash
-lunie run list <workflow-id>
-lunie run get <workflow-id> <run-id>
+lunie run list my-workflow
+lunie run get my-workflow 42
 ```
 
 ## Steps
 
 ```bash
-lunie step list <workflow-id> <run-id>
-lunie step get <workflow-id> <run-id> <step-run-id>
+lunie step list my-workflow 42
+lunie step get my-workflow 42 fetch_post
 ```
 
 ## Secrets
 
 ```bash
 lunie secret list
-lunie secret get <secret-id>
+lunie secret get API_KEY
 lunie secret create --name API_KEY --value "my-secret"
-lunie secret update <secret-id> --description "Rotated"
-lunie secret delete <secret-id>
+lunie secret update API_KEY --description "Rotated"
+lunie secret delete API_KEY
 ```
 
 Secrets are not printed in table output. Use `--output json` if you need raw JSON.
@@ -247,7 +247,7 @@ Secrets are not printed in table output. Use `--output json` if you need raw JSO
 
 - `--output table` shows human-readable tables (default)
 - `--output json` prints raw JSON for scripting
-- `--quiet` prints only IDs
+- `--quiet` prints workflow keys, trigger keys, run numbers, step keys, or secret names depending on the command
 
 ## Troubleshooting
 

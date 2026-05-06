@@ -117,8 +117,8 @@ JSON
 
 ./lunie workflow create --name "MVP Test" --definition /tmp/lunie-definition.json
 ./lunie workflow list
-# run with the workflow id from list output
-./lunie workflow run <workflow-id>
+# run with the workflow key from list output
+./lunie workflow run mvp-test
 ```
 
 Run the terminal UI:
@@ -137,7 +137,6 @@ Contributor and architecture docs:
 
 - [Development Guide](./docs/Development.md)
 - [Architecture Overview](./docs/Architecture.md)
-- [MVP Release Readiness](./docs/MVP-Release-Readiness.md)
 
 Docs website (Docusaurus):
 
