@@ -16,6 +16,7 @@ describe('RunNotifierService', () => {
     id: 'wfr_1',
     workflowId: 'wf_1',
     workflowVersionId: 'wfv_1',
+    number: 1,
     triggerId: null,
     eventId: null,
     status: 'FAILED',
