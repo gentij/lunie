@@ -6,25 +6,115 @@
 
 /* You can override the default Infima variables here. */
 :root {
-  --ifm-color-primary: #1d4ed8;
-  --ifm-color-primary-dark: #1a46c2;
-  --ifm-color-primary-darker: #1842b7;
-  --ifm-color-primary-darkest: #143693;
-  --ifm-color-primary-light: #2357ee;
-  --ifm-color-primary-lighter: #3264ef;
-  --ifm-color-primary-lightest: #5880f2;
+  --ifm-color-primary: #716cff;
+  --ifm-color-primary-dark: #5550ff;
+  --ifm-color-primary-darker: #4741ff;
+  --ifm-color-primary-darkest: #1c15ff;
+  --ifm-color-primary-light: #8d88ff;
+  --ifm-color-primary-lighter: #9b97ff;
+  --ifm-color-primary-lightest: #c5c3ff;
+  --lunie-surface-1: #f7f8ff;
+  --lunie-surface-2: #ffffff;
+  --lunie-surface-3: #eef1ff;
+  --lunie-border: rgba(93, 109, 197, 0.16);
+  --lunie-text-strong: #10162d;
+  --lunie-text-soft: rgba(44, 54, 91, 0.72);
+  --lunie-page-bg: linear-gradient(180deg, #f7f8ff 0%, #eef2ff 100%);
+  --lunie-navbar-bg: rgba(255, 255, 255, 0.8);
+  --lunie-navbar-shadow: 0 10px 30px rgba(74, 88, 155, 0.08);
+  --lunie-footer-bg:
+    radial-gradient(circle at 20% 0%, rgba(115, 230, 255, 0.08), transparent 24%),
+    radial-gradient(circle at 80% 100%, rgba(228, 139, 255, 0.1), transparent 28%),
+    linear-gradient(180deg, #e8ecff 0%, #dfe5fb 100%);
+  --lunie-footer-link: rgba(44, 54, 91, 0.76);
+  --lunie-footer-copy: rgba(44, 54, 91, 0.6);
   --ifm-code-font-size: 95%;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
 }
 
 /* For readability concerns, you should choose a lighter palette in dark mode. */
 [data-theme='dark'] {
-  --ifm-color-primary: #60a5fa;
-  --ifm-color-primary-dark: #4093f9;
-  --ifm-color-primary-darker: #3089f8;
-  --ifm-color-primary-darkest: #0871f6;
-  --ifm-color-primary-light: #80b7fb;
-  --ifm-color-primary-lighter: #90c1fc;
-  --ifm-color-primary-lightest: #c1ddfd;
+  --ifm-color-primary: #8f9bff;
+  --ifm-color-primary-dark: #7383ff;
+  --ifm-color-primary-darker: #6475ff;
+  --ifm-color-primary-darkest: #3950ff;
+  --ifm-color-primary-light: #abb3ff;
+  --ifm-color-primary-lighter: #bac1ff;
+  --ifm-color-primary-lightest: #e5e8ff;
+  --lunie-surface-1: #090d1c;
+  --lunie-surface-2: #11162b;
+  --lunie-surface-3: #171d37;
+  --lunie-border: rgba(148, 163, 255, 0.14);
+  --lunie-text-strong: #f5f7ff;
+  --lunie-text-soft: rgba(219, 225, 245, 0.72);
+  --lunie-page-bg: linear-gradient(180deg, #13162d 0%, #101425 100%);
+  --lunie-navbar-bg: rgba(10, 14, 28, 0.82);
+  --lunie-navbar-shadow: 0 10px 30px rgba(5, 7, 18, 0.22);
+  --lunie-footer-bg:
+    radial-gradient(circle at 20% 0%, rgba(115, 230, 255, 0.06), transparent 24%),
+    radial-gradient(circle at 80% 100%, rgba(228, 139, 255, 0.08), transparent 28%),
+    linear-gradient(180deg, #161a31 0%, #101425 100%);
+  --lunie-footer-link: rgba(219, 225, 245, 0.72);
+  --lunie-footer-copy: rgba(206, 214, 237, 0.64);
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}
+
+html,
+body,
+.__docusaurus,
+.main-wrapper {
+  background: var(--lunie-page-bg);
+}
+
+.navbar {
+  background: var(--lunie-navbar-bg);
+  border-bottom: 1px solid var(--lunie-border);
+  backdrop-filter: blur(18px);
+  box-shadow: var(--lunie-navbar-shadow);
+}
+
+.navbar__brand,
+.navbar__link,
+.navbar-sidebar__brand {
+  color: var(--lunie-text-strong);
+}
+
+.navbar__title {
+  color: var(--lunie-text-strong);
+  letter-spacing: -0.02em;
+}
+
+.navbar__link {
+  color: var(--lunie-text-soft);
+}
+
+.navbar__link:hover,
+.navbar__brand:hover,
+.navbar__title:hover {
+  color: var(--lunie-text-strong);
+}
+
+.navbar__logo img {
+  filter: drop-shadow(0 6px 14px rgba(116, 103, 255, 0.18));
+}
+
+.footer {
+  background: var(--lunie-footer-bg);
+  border-top: 1px solid var(--lunie-border);
+}
+
+.footer__title {
+  color: var(--lunie-text-strong);
+}
+
+.footer__link-item {
+  color: var(--lunie-footer-link);
+}
+
+.footer__link-item:hover {
+  color: var(--lunie-text-strong);
+}
+
+.footer__copyright {
+  color: var(--lunie-footer-copy);
 }

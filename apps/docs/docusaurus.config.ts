@@ -7,7 +7,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 const config: Config = {
   title: 'Lunie Docs',
   tagline: 'Self-hosted workflow automation documentation',
-  favicon: 'img/favicon.ico',
+  favicon: 'img/favicon.svg',
 
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
   future: {
@@ -56,6 +56,10 @@ const config: Config = {
     },
     navbar: {
       title: 'Lunie',
+      logo: {
+        alt: 'Lunie logo',
+        src: 'img/logo.svg',
+      },
       items: [
         {
           type: 'docSidebar',

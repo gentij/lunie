@@ -1,0 +1,22 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="lunie-favicon-gradient" x1="70" y1="52" x2="184" y2="198" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#73E6FF"/>
+      <stop offset="0.58" stop-color="#8490FF"/>
+      <stop offset="1" stop-color="#E48BFF"/>
+    </linearGradient>
+    <mask id="lunie-favicon-crescent-mask">
+      <rect width="256" height="256" fill="white"/>
+      <circle cx="154" cy="108" r="70" fill="black"/>
+    </mask>
+  </defs>
+
+  <g transform="translate(12 0)">
+    <circle cx="116" cy="128" r="84" fill="url(#lunie-favicon-gradient)" mask="url(#lunie-favicon-crescent-mask)"/>
+    <circle cx="116" cy="128" r="84" stroke="url(#lunie-favicon-gradient)" stroke-opacity="0.5" stroke-width="1.2" mask="url(#lunie-favicon-crescent-mask)"/>
+
+    <path d="M151 96C152.758 107.915 162.256 117.447 174.165 119.211C162.256 120.975 152.758 130.507 151 142.422C149.242 130.507 139.744 120.975 127.835 119.211C139.744 117.447 149.242 107.915 151 96Z" fill="url(#lunie-favicon-gradient)"/>
+    <path d="M122 135C123.025 141.952 128.562 147.513 135.51 148.543C128.562 149.573 123.025 155.134 122 162.086C120.975 155.134 115.438 149.573 108.49 148.543C115.438 147.513 120.975 141.952 122 135Z" fill="url(#lunie-favicon-gradient)" fill-opacity="0.82"/>
+    <path d="M176 135C177.025 141.952 182.562 147.513 189.51 148.543C182.562 149.573 177.025 155.134 176 162.086C174.975 155.134 169.438 149.573 162.49 148.543C169.438 147.513 174.975 141.952 176 135Z" fill="url(#lunie-favicon-gradient)" fill-opacity="0.82"/>
+  </g>
+</svg>

@@ -1,5 +1,9 @@
 # Lunie
 
+<p align="center">
+  <img src="apps/docs/static/img/logo.svg" alt="Lunie logo" width="320" />
+</p>
+
 Lunie is a self-hosted workflow automation engine for technical users who want local control, API-first automation, and inspectable execution history.
 
 Documentation website: https://gentij.github.io/lunie
