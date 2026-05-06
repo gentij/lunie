@@ -4,6 +4,7 @@ import "time"
 
 type Workflow struct {
 	ID            string
+	Key           string
 	Name          string
 	Active        bool
 	LatestVersion int
@@ -21,6 +22,7 @@ type WorkflowVersion struct {
 type Trigger struct {
 	ID         string
 	WorkflowID string
+	Key        string
 	Type       string
 	Name       string
 	Active     bool
@@ -41,6 +43,7 @@ type Event struct {
 type WorkflowRun struct {
 	ID          string
 	WorkflowID  string
+	Number      int
 	Status      string
 	TriggerType string
 	StartedAt   time.Time

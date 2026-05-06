@@ -58,10 +58,12 @@ describe('TriggerService', () => {
     const wf = createWorkflowFixture({ id: 'wf_1' });
     const created = createTriggerFixture({
       workflowId: 'wf_1',
+      key: 'webhook',
       type: 'WEBHOOK',
     });
 
     workflowRepo.findById.mockResolvedValue(wf);
+    repo.findManyByWorkflow.mockResolvedValue([]);
     repo.create.mockResolvedValue(created);
 
     await expect(
@@ -74,6 +76,7 @@ describe('TriggerService', () => {
 
     expect(repo.create).toHaveBeenCalledWith({
       workflow: { connect: { id: 'wf_1' } },
+      key: 'webhook',
       type: 'WEBHOOK',
       name: undefined,
       isActive: true,
@@ -126,6 +129,21 @@ describe('TriggerService', () => {
 
     await expect(service.get('wf_1', 'tr_1')).resolves.toBe(trigger);
     expect(repo.findById).toHaveBeenCalledWith('tr_1');
+  });
+
+  it('getByKey() returns trigger when found', async () => {
+    const wf = createWorkflowFixture({ id: 'wf_1' });
+    const trigger = createTriggerFixture({
+      id: 'tr_1',
+      workflowId: 'wf_1',
+      key: 'nightly',
+    });
+
+    workflowRepo.findById.mockResolvedValue(wf);
+    repo.findByWorkflowAndKey.mockResolvedValue(trigger);
+
+    await expect(service.getByKey('wf_1', 'nightly')).resolves.toBe(trigger);
+    expect(repo.findByWorkflowAndKey).toHaveBeenCalledWith('wf_1', 'nightly');
   });
 
   it('get() throws notFound when trigger missing', async () => {

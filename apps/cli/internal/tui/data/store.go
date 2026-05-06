@@ -7,13 +7,13 @@ import (
 
 func MockStore(now time.Time) Store {
 	workflows := []Workflow{
-		{ID: "wf_analytics", Name: "daily-digest", Active: true, LatestVersion: 3, UpdatedAt: now.Add(-4 * time.Hour)},
-		{ID: "wf_sync", Name: "sync-crm", Active: true, LatestVersion: 2, UpdatedAt: now.Add(-2 * time.Hour)},
-		{ID: "wf_ops", Name: "ops-healthcheck", Active: true, LatestVersion: 4, UpdatedAt: now.Add(-30 * time.Minute)},
-		{ID: "wf_marketing", Name: "segment-import", Active: false, LatestVersion: 1, UpdatedAt: now.Add(-36 * time.Hour)},
-		{ID: "wf_billing", Name: "invoice-reminders", Active: true, LatestVersion: 5, UpdatedAt: now.Add(-12 * time.Hour)},
-		{ID: "wf_security", Name: "rotate-keys", Active: true, LatestVersion: 2, UpdatedAt: now.Add(-6 * time.Hour)},
-		{ID: "wf_exports", Name: "weekly-export", Active: false, LatestVersion: 1, UpdatedAt: now.Add(-72 * time.Hour)},
+		{ID: "wf_analytics", Key: "daily-digest", Name: "daily-digest", Active: true, LatestVersion: 3, UpdatedAt: now.Add(-4 * time.Hour)},
+		{ID: "wf_sync", Key: "sync-crm", Name: "sync-crm", Active: true, LatestVersion: 2, UpdatedAt: now.Add(-2 * time.Hour)},
+		{ID: "wf_ops", Key: "ops-healthcheck", Name: "ops-healthcheck", Active: true, LatestVersion: 4, UpdatedAt: now.Add(-30 * time.Minute)},
+		{ID: "wf_marketing", Key: "segment-import", Name: "segment-import", Active: false, LatestVersion: 1, UpdatedAt: now.Add(-36 * time.Hour)},
+		{ID: "wf_billing", Key: "invoice-reminders", Name: "invoice-reminders", Active: true, LatestVersion: 5, UpdatedAt: now.Add(-12 * time.Hour)},
+		{ID: "wf_security", Key: "rotate-keys", Name: "rotate-keys", Active: true, LatestVersion: 2, UpdatedAt: now.Add(-6 * time.Hour)},
+		{ID: "wf_exports", Key: "weekly-export", Name: "weekly-export", Active: false, LatestVersion: 1, UpdatedAt: now.Add(-72 * time.Hour)},
 	}
 
 	versions := []WorkflowVersion{
@@ -30,28 +30,28 @@ func MockStore(now time.Time) Store {
 	}
 
 	triggers := []Trigger{
-		{ID: "trg_1", WorkflowID: "wf_analytics", Type: "cron", Name: "daily-07:00", Active: true, CreatedAt: now.Add(-10 * time.Hour), ConfigJSON: `{"schedule":"0 7 * * *"}`},
-		{ID: "trg_2", WorkflowID: "wf_sync", Type: "webhook", Name: "salesforce-push", Active: true, CreatedAt: now.Add(-24 * time.Hour), ConfigJSON: `{"endpoint":"/hooks/salesforce"}`},
-		{ID: "trg_3", WorkflowID: "wf_ops", Type: "cron", Name: "every-5m", Active: true, CreatedAt: now.Add(-6 * time.Hour), ConfigJSON: `{"schedule":"*/5 * * * *"}`},
-		{ID: "trg_4", WorkflowID: "wf_marketing", Type: "manual", Name: "ad-hoc", Active: false, CreatedAt: now.Add(-36 * time.Hour), ConfigJSON: `{"owner":"growth"}`},
-		{ID: "trg_5", WorkflowID: "wf_billing", Type: "cron", Name: "hourly", Active: true, CreatedAt: now.Add(-18 * time.Hour), ConfigJSON: `{"schedule":"0 * * * *"}`},
-		{ID: "trg_6", WorkflowID: "wf_security", Type: "manual", Name: "rotate-now", Active: true, CreatedAt: now.Add(-12 * time.Hour), ConfigJSON: `{"severity":"high"}`},
-		{ID: "trg_7", WorkflowID: "wf_exports", Type: "cron", Name: "weekly-monday", Active: false, CreatedAt: now.Add(-72 * time.Hour), ConfigJSON: `{"schedule":"0 6 * * 1"}`},
+		{ID: "trg_1", WorkflowID: "wf_analytics", Key: "daily-0700", Type: "cron", Name: "daily-07:00", Active: true, CreatedAt: now.Add(-10 * time.Hour), ConfigJSON: `{"schedule":"0 7 * * *"}`},
+		{ID: "trg_2", WorkflowID: "wf_sync", Key: "salesforce-push", Type: "webhook", Name: "salesforce-push", Active: true, CreatedAt: now.Add(-24 * time.Hour), ConfigJSON: `{"endpoint":"/hooks/salesforce"}`},
+		{ID: "trg_3", WorkflowID: "wf_ops", Key: "every-5m", Type: "cron", Name: "every-5m", Active: true, CreatedAt: now.Add(-6 * time.Hour), ConfigJSON: `{"schedule":"*/5 * * * *"}`},
+		{ID: "trg_4", WorkflowID: "wf_marketing", Key: "ad-hoc", Type: "manual", Name: "ad-hoc", Active: false, CreatedAt: now.Add(-36 * time.Hour), ConfigJSON: `{"owner":"growth"}`},
+		{ID: "trg_5", WorkflowID: "wf_billing", Key: "hourly", Type: "cron", Name: "hourly", Active: true, CreatedAt: now.Add(-18 * time.Hour), ConfigJSON: `{"schedule":"0 * * * *"}`},
+		{ID: "trg_6", WorkflowID: "wf_security", Key: "rotate-now", Type: "manual", Name: "rotate-now", Active: true, CreatedAt: now.Add(-12 * time.Hour), ConfigJSON: `{"severity":"high"}`},
+		{ID: "trg_7", WorkflowID: "wf_exports", Key: "weekly-monday", Type: "cron", Name: "weekly-monday", Active: false, CreatedAt: now.Add(-72 * time.Hour), ConfigJSON: `{"schedule":"0 6 * * 1"}`},
 	}
 
 	runs := []WorkflowRun{
-		{ID: "run_1024", WorkflowID: "wf_analytics", Status: "SUCCEEDED", TriggerType: "cron", StartedAt: now.Add(-55 * time.Minute), Duration: 4 * time.Minute, InputJSON: `{"range":"24h"}`, OutputJSON: `{"rows":142,"status":"ok"}`},
-		{ID: "run_1025", WorkflowID: "wf_analytics", Status: "FAILED", TriggerType: "cron", StartedAt: now.Add(-3 * time.Hour), Duration: 2 * time.Minute, InputJSON: `{"range":"24h"}`, OutputJSON: `{}`, ErrorJSON: `{"error":"s3 upload failed","code":"S3_502"}`},
-		{ID: "run_1026", WorkflowID: "wf_sync", Status: "RUNNING", TriggerType: "webhook", StartedAt: now.Add(-8 * time.Minute), Duration: 0, InputJSON: `{"batch":"crm-91"}`, OutputJSON: `{}`},
-		{ID: "run_1027", WorkflowID: "wf_ops", Status: "SUCCEEDED", TriggerType: "cron", StartedAt: now.Add(-12 * time.Minute), Duration: 1 * time.Minute, InputJSON: `{"targets":8}`, OutputJSON: `{"healthy":8}`},
-		{ID: "run_1028", WorkflowID: "wf_marketing", Status: "QUEUED", TriggerType: "manual", StartedAt: now.Add(-4 * time.Minute), Duration: 0, InputJSON: `{"segment":"retarget"}`, OutputJSON: `{}`},
-		{ID: "run_1029", WorkflowID: "wf_billing", Status: "FAILED", TriggerType: "cron", StartedAt: now.Add(-90 * time.Minute), Duration: 3 * time.Minute, InputJSON: `{"count":51}`, OutputJSON: `{}`, ErrorJSON: `{"error":"rate limited","retry_in":"15m"}`},
-		{ID: "run_1030", WorkflowID: "wf_security", Status: "SUCCEEDED", TriggerType: "manual", StartedAt: now.Add(-6 * time.Hour), Duration: 6 * time.Minute, InputJSON: `{"rotate":"kms"}`, OutputJSON: `{"rotated":3}`},
-		{ID: "run_1031", WorkflowID: "wf_exports", Status: "SUCCEEDED", TriggerType: "cron", StartedAt: now.Add(-26 * time.Hour), Duration: 12 * time.Minute, InputJSON: `{"target":"s3"}`, OutputJSON: `{"files":12}`},
-		{ID: "run_1032", WorkflowID: "wf_sync", Status: "SUCCEEDED", TriggerType: "webhook", StartedAt: now.Add(-5 * time.Hour), Duration: 7 * time.Minute, InputJSON: `{"batch":"crm-90"}`, OutputJSON: `{"synced":128}`},
-		{ID: "run_1033", WorkflowID: "wf_ops", Status: "SUCCEEDED", TriggerType: "cron", StartedAt: now.Add(-30 * time.Minute), Duration: 1 * time.Minute, InputJSON: `{"targets":8}`, OutputJSON: `{"healthy":7,"degraded":1}`},
-		{ID: "run_1034", WorkflowID: "wf_billing", Status: "RUNNING", TriggerType: "cron", StartedAt: now.Add(-2 * time.Minute), Duration: 0, InputJSON: `{"count":34}`, OutputJSON: `{}`},
-		{ID: "run_1035", WorkflowID: "wf_security", Status: "QUEUED", TriggerType: "manual", StartedAt: now.Add(-1 * time.Minute), Duration: 0, InputJSON: `{"rotate":"db"}`, OutputJSON: `{}`},
+		{ID: "run_1024", WorkflowID: "wf_analytics", Number: 1024, Status: "SUCCEEDED", TriggerType: "cron", StartedAt: now.Add(-55 * time.Minute), Duration: 4 * time.Minute, InputJSON: `{"range":"24h"}`, OutputJSON: `{"rows":142,"status":"ok"}`},
+		{ID: "run_1025", WorkflowID: "wf_analytics", Number: 1025, Status: "FAILED", TriggerType: "cron", StartedAt: now.Add(-3 * time.Hour), Duration: 2 * time.Minute, InputJSON: `{"range":"24h"}`, OutputJSON: `{}`, ErrorJSON: `{"error":"s3 upload failed","code":"S3_502"}`},
+		{ID: "run_1026", WorkflowID: "wf_sync", Number: 1026, Status: "RUNNING", TriggerType: "webhook", StartedAt: now.Add(-8 * time.Minute), Duration: 0, InputJSON: `{"batch":"crm-91"}`, OutputJSON: `{}`},
+		{ID: "run_1027", WorkflowID: "wf_ops", Number: 1027, Status: "SUCCEEDED", TriggerType: "cron", StartedAt: now.Add(-12 * time.Minute), Duration: 1 * time.Minute, InputJSON: `{"targets":8}`, OutputJSON: `{"healthy":8}`},
+		{ID: "run_1028", WorkflowID: "wf_marketing", Number: 1028, Status: "QUEUED", TriggerType: "manual", StartedAt: now.Add(-4 * time.Minute), Duration: 0, InputJSON: `{"segment":"retarget"}`, OutputJSON: `{}`},
+		{ID: "run_1029", WorkflowID: "wf_billing", Number: 1029, Status: "FAILED", TriggerType: "cron", StartedAt: now.Add(-90 * time.Minute), Duration: 3 * time.Minute, InputJSON: `{"count":51}`, OutputJSON: `{}`, ErrorJSON: `{"error":"rate limited","retry_in":"15m"}`},
+		{ID: "run_1030", WorkflowID: "wf_security", Number: 1030, Status: "SUCCEEDED", TriggerType: "manual", StartedAt: now.Add(-6 * time.Hour), Duration: 6 * time.Minute, InputJSON: `{"rotate":"kms"}`, OutputJSON: `{"rotated":3}`},
+		{ID: "run_1031", WorkflowID: "wf_exports", Number: 1031, Status: "SUCCEEDED", TriggerType: "cron", StartedAt: now.Add(-26 * time.Hour), Duration: 12 * time.Minute, InputJSON: `{"target":"s3"}`, OutputJSON: `{"files":12}`},
+		{ID: "run_1032", WorkflowID: "wf_sync", Number: 1032, Status: "SUCCEEDED", TriggerType: "webhook", StartedAt: now.Add(-5 * time.Hour), Duration: 7 * time.Minute, InputJSON: `{"batch":"crm-90"}`, OutputJSON: `{"synced":128}`},
+		{ID: "run_1033", WorkflowID: "wf_ops", Number: 1033, Status: "SUCCEEDED", TriggerType: "cron", StartedAt: now.Add(-30 * time.Minute), Duration: 1 * time.Minute, InputJSON: `{"targets":8}`, OutputJSON: `{"healthy":7,"degraded":1}`},
+		{ID: "run_1034", WorkflowID: "wf_billing", Number: 1034, Status: "RUNNING", TriggerType: "cron", StartedAt: now.Add(-2 * time.Minute), Duration: 0, InputJSON: `{"count":34}`, OutputJSON: `{}`},
+		{ID: "run_1035", WorkflowID: "wf_security", Number: 1035, Status: "QUEUED", TriggerType: "manual", StartedAt: now.Add(-1 * time.Minute), Duration: 0, InputJSON: `{"rotate":"db"}`, OutputJSON: `{}`},
 	}
 
 	stepRuns := []StepRun{}

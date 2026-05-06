@@ -15,6 +15,27 @@ func workflowName(store *data.Store, workflowID string) string {
 	return workflowID
 }
 
+func workflowKey(store *data.Store, workflowID string) string {
+	if wf, ok := workflowByID(store, workflowID); ok && strings.TrimSpace(wf.Key) != "" {
+		return wf.Key
+	}
+	return workflowID
+}
+
+func triggerKey(store *data.Store, triggerID string) string {
+	if trg, ok := triggerByID(store, triggerID); ok && strings.TrimSpace(trg.Key) != "" {
+		return trg.Key
+	}
+	return triggerID
+}
+
+func runLabel(store *data.Store, runID string) string {
+	if run, ok := runByID(store, runID); ok {
+		return fmt.Sprintf("#%d", run.Number)
+	}
+	return runID
+}
+
 func workflowByID(store *data.Store, workflowID string) (data.Workflow, bool) {
 	for _, wf := range store.Workflows {
 		if wf.ID == workflowID {

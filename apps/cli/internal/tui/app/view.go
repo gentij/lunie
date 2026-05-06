@@ -131,14 +131,22 @@ func renderActionModal(m Model) string {
 	body := ""
 	switch m.action.Mode {
 	case actionModalRenameWorkflow:
+		workflowRef := m.action.WorkflowID
+		if workflow, ok := workflowByID(&m.store, m.action.WorkflowID); ok {
+			workflowRef = workflow.Key
+		}
 		body = strings.Join([]string{
-			"Workflow ID: " + m.action.WorkflowID,
+			"Workflow Key: " + workflowRef,
 			"",
 			m.action.Primary.View(),
 		}, "\n")
 	case actionModalRenameTrigger:
+		triggerRef := m.action.TriggerID
+		if trigger, ok := triggerByID(&m.store, m.action.TriggerID); ok {
+			triggerRef = trigger.Key
+		}
 		body = strings.Join([]string{
-			"Trigger ID: " + m.action.TriggerID,
+			"Trigger Key: " + triggerRef,
 			"",
 			m.action.Primary.View(),
 		}, "\n")
@@ -154,10 +162,14 @@ func renderActionModal(m Model) string {
 		if m.action.Focus == 2 {
 			activeLabel = m.styles.ChipActive.Render(" " + activeLabel + " ")
 		}
+		workflowRef := m.action.WorkflowID
+		if workflow, ok := workflowByID(&m.store, m.action.WorkflowID); ok {
+			workflowRef = workflow.Key
+		}
 		if isCronTriggerType(m.action.TriggerType) {
 			hint = "tab next  |  ←/→ type  |  space toggle active  |  enter submit  |  esc cancel"
 			body = strings.Join([]string{
-				"Workflow ID: " + m.action.WorkflowID,
+				"Workflow Key: " + workflowRef,
 				"",
 				typeLine,
 				m.action.Primary.View(),
@@ -168,7 +180,7 @@ func renderActionModal(m Model) string {
 		} else {
 			hint = "tab next  |  ←/→ type  |  space toggle active  |  enter submit  |  esc cancel"
 			body = strings.Join([]string{
-				"Workflow ID: " + m.action.WorkflowID,
+				"Workflow Key: " + workflowRef,
 				"",
 				typeLine,
 				m.action.Primary.View(),
@@ -177,6 +189,10 @@ func renderActionModal(m Model) string {
 			}, "\n")
 		}
 	case actionModalUpdateTrigger:
+		triggerRef := m.action.TriggerID
+		if trigger, ok := triggerByID(&m.store, m.action.TriggerID); ok {
+			triggerRef = trigger.Key
+		}
 		activeLabel := "Active: false"
 		if m.action.TriggerActive {
 			activeLabel = "Active: true"
@@ -187,7 +203,7 @@ func renderActionModal(m Model) string {
 		hint = "tab next  |  space toggle active  |  enter submit  |  esc cancel"
 		if isCronTriggerType(m.action.TriggerType) {
 			body = strings.Join([]string{
-				"Trigger ID: " + m.action.TriggerID,
+				"Trigger Key: " + triggerRef,
 				"Type: " + m.action.TriggerType,
 				"",
 				m.action.Primary.View(),
@@ -197,7 +213,7 @@ func renderActionModal(m Model) string {
 			}, "\n")
 		} else {
 			body = strings.Join([]string{
-				"Trigger ID: " + m.action.TriggerID,
+				"Trigger Key: " + triggerRef,
 				"Type: " + m.action.TriggerType,
 				"",
 				m.action.Primary.View(),
@@ -216,8 +232,12 @@ func renderActionModal(m Model) string {
 		}, "\n")
 	case actionModalUpdateSecret:
 		hint = "tab next field  |  enter submit  |  esc cancel"
+		secretRef := m.action.SecretID
+		if secret, ok := secretByID(&m.store, m.action.SecretID); ok {
+			secretRef = secret.Name
+		}
 		body = strings.Join([]string{
-			"Secret ID: " + m.action.SecretID,
+			"Secret Name: " + secretRef,
 			m.action.Description,
 			"",
 			m.action.Primary.View(),

@@ -67,9 +67,31 @@ export class WorkflowController {
     description: 'Get workflow',
     errors: [401, 404, 500],
   })
+  @Get('by-key/:workflowKey')
+  getByKey(@Param('workflowKey') workflowKey: string) {
+    return this.service.getByKey(workflowKey);
+  }
+
+  @ApiEnvelope(WorkflowResDto, {
+    description: 'Get workflow',
+    errors: [401, 404, 500],
+  })
   @Get(':id')
   get(@Param('id') id: string) {
     return this.service.get(id);
+  }
+
+  @ApiEnvelope(WorkflowResDto, {
+    description: 'Update workflow',
+    errors: [401, 404, 500],
+  })
+  @Patch('by-key/:workflowKey')
+  async updateByKey(
+    @Param('workflowKey') workflowKey: string,
+    @Body() body: UpdateWorkflowReqDto,
+  ) {
+    const workflow = await this.service.getByKey(workflowKey);
+    return this.service.update(workflow.id, body);
   }
 
   @ApiEnvelope(WorkflowResDto, {
@@ -85,9 +107,32 @@ export class WorkflowController {
     description: 'Delete workflow (soft)',
     errors: [401, 404, 500],
   })
+  @Delete('by-key/:workflowKey')
+  async deleteByKey(@Param('workflowKey') workflowKey: string) {
+    const workflow = await this.service.getByKey(workflowKey);
+    return this.service.delete(workflow.id);
+  }
+
+  @ApiEnvelope(WorkflowResDto, {
+    description: 'Delete workflow (soft)',
+    errors: [401, 404, 500],
+  })
   @Delete(':id')
   delete(@Param('id') id: string) {
     return this.service.delete(id);
+  }
+
+  @ApiEnvelope(WorkflowVersionResDto, {
+    description: 'Create workflow version',
+    errors: [401, 404, 500],
+  })
+  @Post('by-key/:workflowKey/versions')
+  async createVersionByKey(
+    @Param('workflowKey') workflowKey: string,
+    @Body() body: CreateWorkflowVersionReqDto,
+  ) {
+    const workflow = await this.service.getByKey(workflowKey);
+    return this.service.createVersion(workflow.id, body.definition);
   }
 
   @ApiEnvelope(WorkflowVersionResDto, {
@@ -100,6 +145,30 @@ export class WorkflowController {
     @Body() body: CreateWorkflowVersionReqDto,
   ) {
     return this.service.createVersion(id, body.definition);
+  }
+
+  @ApiEnvelope(ValidateWorkflowDefinitionResDto, {
+    description: 'Validate workflow definition (no persist)',
+    errors: [401, 404, 500],
+  })
+  @Post('by-key/:workflowKey/versions/validate')
+  async validateVersionDefinitionByKey(
+    @Param('workflowKey') workflowKey: string,
+    @Body() body: ValidateWorkflowDefinitionReqDto,
+  ) {
+    await this.service.getByKey(workflowKey);
+
+    const result = this.service.validateDefinition(body.definition);
+    if (result.referencedSecrets.length > 0) {
+      await this.service.validateDefinitionOrThrow(body.definition);
+    }
+    return {
+      valid: result.valid,
+      issues: result.issues,
+      inferredDependencies: result.inferredDependencies,
+      executionBatches: result.executionBatches,
+      referencedSecrets: result.referencedSecrets,
+    };
   }
 
   @ApiEnvelope(ValidateWorkflowDefinitionResDto, {
@@ -131,6 +200,35 @@ export class WorkflowController {
     description: 'Start workflow manually',
     errors: [401, 404, 500],
   })
+  @Post('by-key/:workflowKey/run')
+  async runManualByKey(
+    @Param('workflowKey') workflowKey: string,
+    @Body() body: RunWorkflowReqDto,
+  ) {
+    const { input, overrides } = parseRunWorkflowReq(body);
+
+    const workflow = await this.service.getByKey(workflowKey);
+
+    if (!workflow.latestVersionId) {
+      throw new Error('Workflow has no versions');
+    }
+
+    const { workflowRunId, workflowRunNumber } =
+      await this.orchestrationService.startWorkflow({
+        workflowId: workflow.id,
+        workflowVersionId: workflow.latestVersionId,
+        eventType: 'MANUAL',
+        input,
+        overrides,
+      });
+
+    return { workflowRunId, workflowRunNumber, status: 'QUEUED' };
+  }
+
+  @ApiEnvelope(RunWorkflowResDto, {
+    description: 'Start workflow manually',
+    errors: [401, 404, 500],
+  })
   @Post(':id/run')
   async runManual(
     @Param('id') workflowId: string,
@@ -144,14 +242,15 @@ export class WorkflowController {
       throw new Error('Workflow has no versions');
     }
 
-    const { workflowRunId } = await this.orchestrationService.startWorkflow({
-      workflowId,
-      workflowVersionId: workflow.latestVersionId,
-      eventType: 'MANUAL',
-      input,
-      overrides,
-    });
+    const { workflowRunId, workflowRunNumber } =
+      await this.orchestrationService.startWorkflow({
+        workflowId,
+        workflowVersionId: workflow.latestVersionId,
+        eventType: 'MANUAL',
+        input,
+        overrides,
+      });
 
-    return { workflowRunId, status: 'QUEUED' };
+    return { workflowRunId, workflowRunNumber, status: 'QUEUED' };
   }
 }

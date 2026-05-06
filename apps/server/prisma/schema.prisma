@@ -7,11 +7,11 @@ datasource db {
 }
 
 model ApiToken {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   name       String
-  tokenHash  String   @unique
+  tokenHash  String    @unique
   scopes     String[]
-  createdAt  DateTime @default(now())
+  createdAt  DateTime  @default(now())
   lastUsedAt DateTime?
   revokedAt  DateTime?
 }
@@ -28,15 +28,17 @@ model Secret {
 }
 
 model Workflow {
-  id        String   @id @default(cuid())
-  name      String
-  isActive  Boolean  @default(true)
+  id          String  @id @default(cuid())
+  key         String  @unique
+  name        String
+  isActive    Boolean @default(true)
+  runSequence Int     @default(0)
 
-  versions  WorkflowVersion[] @relation("WorkflowVersions")
-  triggers  Trigger[]
-  runs      WorkflowRun[]
+  versions WorkflowVersion[] @relation("WorkflowVersions")
+  triggers Trigger[]
+  runs     WorkflowRun[]
 
-  latestVersionId String? @unique
+  latestVersionId String?          @unique
   latestVersion   WorkflowVersion? @relation("WorkflowLatestVersion", fields: [latestVersionId], references: [id])
 
   createdAt DateTime @default(now())
@@ -55,20 +57,22 @@ enum TriggerType {
 model Trigger {
   id         String      @id @default(cuid())
   workflowId String
+  key        String
   type       TriggerType
   name       String?
   isActive   Boolean     @default(true)
 
-  config     Json        @default("{}")
+  config Json @default("{}")
 
-  workflow   Workflow    @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  workflow Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
 
-  events     Event[]
-  runs       WorkflowRun[]
+  events Event[]
+  runs   WorkflowRun[]
 
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
+  @@unique([workflowId, key])
   @@index([workflowId])
   @@index([type])
   @@index([isActive])
@@ -83,12 +87,12 @@ model Event {
   receivedAt DateTime @default(now())
   createdAt  DateTime @default(now())
 
-  trigger    Trigger  @relation(fields: [triggerId], references: [id], onDelete: Cascade)
-  run        WorkflowRun?
+  trigger Trigger      @relation(fields: [triggerId], references: [id], onDelete: Cascade)
+  run     WorkflowRun?
 
+  @@unique([triggerId, externalId])
   @@index([triggerId])
   @@index([receivedAt])
-  @@unique([triggerId, externalId])
 }
 
 enum WorkflowRunStatus {
@@ -109,6 +113,7 @@ model WorkflowRun {
   id                String            @id @default(cuid())
   workflowId        String
   workflowVersionId String
+  number            Int
   triggerId         String?
   eventId           String?           @unique
   status            WorkflowRunStatus @default(QUEUED)
@@ -118,16 +123,17 @@ model WorkflowRun {
   startedAt         DateTime?
   finishedAt        DateTime?
 
-  workflow          Workflow          @relation(fields: [workflowId], references: [id], onDelete: Cascade)
-  workflowVersion   WorkflowVersion   @relation(fields: [workflowVersionId], references: [id], onDelete: Cascade)
-  trigger           Trigger?          @relation(fields: [triggerId], references: [id], onDelete: SetNull)
-  event             Event?            @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  workflow        Workflow        @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  workflowVersion WorkflowVersion @relation(fields: [workflowVersionId], references: [id], onDelete: Cascade)
+  trigger         Trigger?        @relation(fields: [triggerId], references: [id], onDelete: SetNull)
+  event           Event?          @relation(fields: [eventId], references: [id], onDelete: SetNull)
 
-  stepRuns          StepRun[]
+  stepRuns StepRun[]
 
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
+  @@unique([workflowId, number])
   @@index([workflowId])
   @@index([workflowVersionId])
   @@index([triggerId])
@@ -136,46 +142,46 @@ model WorkflowRun {
 }
 
 model StepRun {
-  id            String        @id @default(cuid())
-  workflowRunId String
-  stepKey       String
-  status        StepRunStatus @default(QUEUED)
-  attempt       Int           @default(0)
-  input         Json          @default("{}")
+  id              String        @id @default(cuid())
+  workflowRunId   String
+  stepKey         String
+  status          StepRunStatus @default(QUEUED)
+  attempt         Int           @default(0)
+  input           Json          @default("{}")
   requestOverride Json?
-  output        Json?
-  error         Json?
-  logs          Json?
-  lastErrorAt   DateTime?
-  durationMs    Int?
-  startedAt     DateTime?
-  finishedAt    DateTime?
+  output          Json?
+  error           Json?
+  logs            Json?
+  lastErrorAt     DateTime?
+  durationMs      Int?
+  startedAt       DateTime?
+  finishedAt      DateTime?
 
-  workflowRun   WorkflowRun   @relation(fields: [workflowRunId], references: [id], onDelete: Cascade)
+  workflowRun WorkflowRun @relation(fields: [workflowRunId], references: [id], onDelete: Cascade)
 
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
+  @@unique([workflowRunId, stepKey])
   @@index([workflowRunId])
   @@index([status])
   @@index([createdAt])
-  @@unique([workflowRunId, stepKey])
 }
 
 model WorkflowVersion {
-  id         String   @id @default(cuid())
+  id String @id @default(cuid())
 
   workflowId String
   workflow   Workflow @relation("WorkflowVersions", fields: [workflowId], references: [id], onDelete: Cascade)
 
-  runs       WorkflowRun[]
+  runs WorkflowRun[]
 
   version    Int
   definition Json
 
-  createdAt  DateTime @default(now())
+  createdAt DateTime @default(now())
 
-  latestFor  Workflow? @relation("WorkflowLatestVersion")
+  latestFor Workflow? @relation("WorkflowLatestVersion")
 
   @@unique([workflowId, version])
   @@index([workflowId])

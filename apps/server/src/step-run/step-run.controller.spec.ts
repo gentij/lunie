@@ -53,6 +53,7 @@ describe('StepRunController', () => {
       },
     });
     expect(listSpy).toHaveBeenCalledWith({
+      workflowId: 'wf_1',
       workflowRunId: 'wfr_1',
       page: 1,
       pageSize: 25,
@@ -64,6 +65,6 @@ describe('StepRunController', () => {
     const getSpy = jest.spyOn(service, 'get').mockResolvedValue(step);
 
     await expect(controller.get('wf_1', 'wfr_1', 'sr_1')).resolves.toBe(step);
-    expect(getSpy).toHaveBeenCalledWith('wfr_1', 'sr_1');
+    expect(getSpy).toHaveBeenCalledWith('wf_1', 'wfr_1', 'sr_1');
   });
 });

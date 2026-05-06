@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import type { Prisma, StepRun } from '@prisma/client';
-import { PrismaService } from '../prisma.service';
+import { Injectable } from "@nestjs/common";
+import type { Prisma, StepRun } from "@prisma/client";
+import { PrismaService } from "../prisma.service";
 
 @Injectable()
 export class StepRunRepository {
@@ -13,7 +13,7 @@ export class StepRunRepository {
   findManyByWorkflowRun(workflowRunId: string): Promise<StepRun[]> {
     return this.prisma.stepRun.findMany({
       where: { workflowRunId },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { createdAt: "asc" },
     });
   }
 
@@ -21,12 +21,12 @@ export class StepRunRepository {
     workflowRunId: string;
     page: number;
     pageSize: number;
-    sortBy: 'createdAt' | 'updatedAt';
-    sortOrder: 'asc' | 'desc';
+    sortBy: "createdAt" | "updatedAt";
+    sortOrder: "asc" | "desc";
   }): Promise<{ items: StepRun[]; total: number }> {
     const skip = (params.page - 1) * params.pageSize;
     const orderBy =
-      params.sortBy === 'updatedAt'
+      params.sortBy === "updatedAt"
         ? [{ updatedAt: params.sortOrder }, { id: params.sortOrder }]
         : [{ createdAt: params.sortOrder }, { id: params.sortOrder }];
     const [items, total] = await Promise.all([
@@ -46,6 +46,15 @@ export class StepRunRepository {
 
   findById(id: string): Promise<StepRun | null> {
     return this.prisma.stepRun.findUnique({ where: { id } });
+  }
+
+  findByWorkflowRunAndStepKey(
+    workflowRunId: string,
+    stepKey: string,
+  ): Promise<StepRun | null> {
+    return this.prisma.stepRun.findUnique({
+      where: { workflowRunId_stepKey: { workflowRunId, stepKey } },
+    });
   }
 
   findFirst(args: Prisma.StepRunFindFirstArgs): Promise<StepRun | null> {

@@ -7,6 +7,10 @@ import { buildPaginationMeta } from 'src/common/pagination/pagination';
 import { CronTriggerConfigSchema } from './cron/cron-trigger.types';
 import { parseExpression } from 'cron-parser';
 import { CryptoService } from 'src/crypto/crypto.service';
+import {
+  buildUniqueKey,
+  deriveReservedKey,
+} from 'src/common/identifiers/key.util';
 
 const CRON_FIVE_FIELD = /^\s*([^\s]+\s+){4}[^\s]+\s*$/;
 
@@ -33,6 +37,22 @@ export class TriggerService {
   }): Promise<Trigger> {
     await this.assertWorkflowExists(params.workflowId);
 
+    const existingTriggers = await this.repo.findManyByWorkflow(
+      params.workflowId,
+    );
+    const triggerTypeKey = params.type.toLowerCase();
+    const triggerKey = buildUniqueKey(
+      params.name ?? triggerTypeKey,
+      triggerTypeKey,
+      existingTriggers.map((trigger) =>
+        deriveReservedKey({
+          key: trigger.key,
+          source: trigger.name ?? trigger.type,
+          fallback: trigger.type.toLowerCase(),
+        }),
+      ),
+    );
+
     if (params.type === 'CRON') {
       const parsed = CronTriggerConfigSchema.safeParse(params.config ?? {});
       if (!parsed.success) {
@@ -57,6 +77,7 @@ export class TriggerService {
 
     return this.repo.create({
       workflow: { connect: { id: params.workflowId } },
+      key: triggerKey,
       type: params.type,
       name: params.name,
       isActive: params.isActive ?? true,
@@ -94,6 +115,17 @@ export class TriggerService {
 
     if (!trigger || trigger.workflowId !== workflowId)
       throw AppError.notFound(ErrorDefinitions.TRIGGER.NOT_FOUND);
+
+    return trigger;
+  }
+
+  async getByKey(workflowId: string, key: string): Promise<Trigger> {
+    await this.assertWorkflowExists(workflowId);
+    const trigger = await this.repo.findByWorkflowAndKey(workflowId, key);
+
+    if (!trigger) {
+      throw AppError.notFound(ErrorDefinitions.TRIGGER.NOT_FOUND);
+    }
 
     return trigger;
   }

@@ -173,8 +173,8 @@ func (m *Model) openDeleteSecretModalCmd() tea.Cmd {
 	if !ok {
 		return m.pushToast(ToastWarn, "Select a secret first")
 	}
-	phrase := "DELETE " + secret.ID
-	description := "Permanently delete secret \"" + secret.Name + "\" (" + secret.ID + ")"
+	phrase := "DELETE " + secret.Name
+	description := "Permanently delete secret \"" + secret.Name + "\""
 	m.openDeleteConfirmModal("Delete Secret", description, phrase, "secret", "", "", secret.ID)
 	return nil
 }
@@ -194,8 +194,8 @@ func (m *Model) openDeleteWorkflowModalCmd() tea.Cmd {
 	if !wf.Active {
 		return m.pushToast(ToastInfo, "Workflow already archived; press e to restore")
 	}
-	phrase := "ARCHIVE " + wf.ID
-	description := "Archive workflow \"" + wf.Name + " (" + wf.ID + ") and set it inactive"
+	phrase := "ARCHIVE " + wf.Key
+	description := "Archive workflow \"" + wf.Name + "\" [" + wf.Key + "] and set it inactive"
 	m.openDeleteConfirmModal("Archive Workflow", description, phrase, "workflow", wf.ID, "", "")
 	return nil
 }
@@ -215,8 +215,8 @@ func (m *Model) openDeleteTriggerModalCmd() tea.Cmd {
 	if !trg.Active {
 		return m.pushToast(ToastInfo, "Trigger already archived; press e to restore")
 	}
-	phrase := "ARCHIVE " + trg.ID
-	description := "Archive trigger \"" + trg.Name + " (" + trg.ID + ") and set it inactive"
+	phrase := "ARCHIVE " + trg.Key
+	description := "Archive trigger \"" + trg.Name + "\" [" + trg.Key + "] and set it inactive"
 	m.openDeleteConfirmModal("Archive Trigger", description, phrase, "trigger", trg.WorkflowID, trg.ID, "")
 	return nil
 }
@@ -229,9 +229,11 @@ func (m *Model) openCLIHandoffModalCmd(topic string) tea.Cmd {
 	if selectedWorkflow == "" && m.view == ViewWorkflows {
 		selectedWorkflow = m.selectedRowID()
 	}
-	workflowTarget := "<workflow-id>"
+	workflowTarget := "<workflow-key>"
 	if strings.TrimSpace(selectedWorkflow) != "" {
-		workflowTarget = selectedWorkflow
+		if workflow, ok := workflowByID(&m.store, selectedWorkflow); ok {
+			workflowTarget = workflow.Key
+		}
 	}
 	switch strings.TrimSpace(topic) {
 	case "workflow-version-create":

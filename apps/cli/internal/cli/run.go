@@ -20,7 +20,7 @@ var runListSortOrder string
 
 func init() {
 	listCmd := &cobra.Command{
-		Use:   "list <workflow-id>",
+		Use:   "list <workflow-key>",
 		Short: "List workflow runs",
 		Args:  cobra.ExactArgs(1),
 		RunE:  runList,
@@ -31,7 +31,7 @@ func init() {
 	listCmd.Flags().StringVar(&runListSortOrder, "sort-order", "desc", "Sort order (asc|desc)")
 
 	getCmd := &cobra.Command{
-		Use:   "get <workflow-id> <run-id>",
+		Use:   "get <workflow-key> <run-number>",
 		Short: "Get a workflow run",
 		Args:  cobra.ExactArgs(2),
 		RunE:  runGet,
@@ -47,8 +47,8 @@ func runList(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("missing context")
 	}
 
-	workflowID := args[0]
-	result, err := ctx.Client.ListWorkflowRuns(workflowID, runListPage, runListPageSize, runListSortBy, runListSortOrder)
+	workflowKey := args[0]
+	result, err := ctx.Client.ListWorkflowRunsByKey(workflowKey, runListPage, runListPageSize, runListSortBy, runListSortOrder)
 	if err != nil {
 		return err
 	}
@@ -59,16 +59,16 @@ func runList(cmd *cobra.Command, args []string) error {
 
 	if ctx.Quiet {
 		for _, item := range result.Items {
-			fmt.Fprintln(os.Stdout, item.ID)
+			fmt.Fprintln(os.Stdout, item.Number)
 		}
 		return nil
 	}
 
 	rows := make([][]string, 0, len(result.Items))
 	for _, item := range result.Items {
-		rows = append(rows, []string{item.ID, output.ColorStatus(item.Status), item.WorkflowVersionID, item.CreatedAt})
+		rows = append(rows, []string{fmt.Sprintf("%d", item.Number), output.ColorStatus(item.Status), item.WorkflowVersionID, item.CreatedAt})
 	}
-	if err := output.PrintListTable([]string{"ID", "STATUS", "VERSION", "CREATED"}, rows); err != nil {
+	if err := output.PrintListTable([]string{"RUN", "STATUS", "VERSION", "CREATED"}, rows); err != nil {
 		return err
 	}
 	return output.PrintPagination(result.Pagination)
@@ -80,9 +80,13 @@ func runGet(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("missing context")
 	}
 
-	workflowID := args[0]
-	runID := args[1]
-	result, err := ctx.Client.GetWorkflowRun(workflowID, runID)
+	workflowKey := args[0]
+	runNumber, err := parsePositiveIntArg("run number", args[1])
+	if err != nil {
+		return err
+	}
+
+	result, err := ctx.Client.GetWorkflowRunByNumber(workflowKey, runNumber)
 	if err != nil {
 		return err
 	}
@@ -91,7 +95,7 @@ func runGet(cmd *cobra.Command, args []string) error {
 		return output.PrintJSON(result)
 	}
 	if ctx.Quiet {
-		fmt.Fprintln(os.Stdout, result.ID)
+		fmt.Fprintln(os.Stdout, result.Number)
 		return nil
 	}
 
@@ -105,6 +109,7 @@ func runGet(cmd *cobra.Command, args []string) error {
 	}
 
 	return output.PrintKVTable([][2]string{
+		{"number", fmt.Sprintf("%d", result.Number)},
 		{"id", result.ID},
 		{"workflowId", result.WorkflowID},
 		{"workflowVersionId", result.WorkflowVersionID},

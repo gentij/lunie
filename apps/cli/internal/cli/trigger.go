@@ -32,7 +32,7 @@ var triggerWebhookPublicBase string
 
 func init() {
 	listCmd := &cobra.Command{
-		Use:   "list <workflow-id>",
+		Use:   "list <workflow-key>",
 		Short: "List triggers",
 		Args:  cobra.ExactArgs(1),
 		RunE:  triggerList,
@@ -43,14 +43,14 @@ func init() {
 	listCmd.Flags().StringVar(&triggerListSortOrder, "sort-order", "desc", "Sort order (asc|desc)")
 
 	getCmd := &cobra.Command{
-		Use:   "get <workflow-id> <trigger-id>",
+		Use:   "get <workflow-key> <trigger-key>",
 		Short: "Get a trigger",
 		Args:  cobra.ExactArgs(2),
 		RunE:  triggerGet,
 	}
 
 	createCmd := &cobra.Command{
-		Use:   "create <workflow-id>",
+		Use:   "create <workflow-key>",
 		Short: "Create a trigger",
 		Args:  cobra.ExactArgs(1),
 		RunE:  triggerCreate,
@@ -62,7 +62,7 @@ func init() {
 	_ = createCmd.MarkFlagRequired("type")
 
 	updateCmd := &cobra.Command{
-		Use:   "update <workflow-id> <trigger-id>",
+		Use:   "update <workflow-key> <trigger-key>",
 		Short: "Update a trigger",
 		Args:  cobra.ExactArgs(2),
 		RunE:  triggerUpdate,
@@ -72,7 +72,7 @@ func init() {
 	updateCmd.Flags().StringVar(&triggerUpdateConfig, "config", "", "Path to config JSON")
 
 	deleteCmd := &cobra.Command{
-		Use:   "delete <workflow-id> <trigger-id>",
+		Use:   "delete <workflow-key> <trigger-key>",
 		Short: "Delete a trigger (soft)",
 		Args:  cobra.ExactArgs(2),
 		RunE:  triggerDelete,
@@ -84,7 +84,7 @@ func init() {
 	}
 
 	rotateKeyCmd := &cobra.Command{
-		Use:   "rotate-key <workflow-id> <trigger-id>",
+		Use:   "rotate-key <workflow-key> <trigger-key>",
 		Short: "Rotate webhook key and print webhook URL",
 		Args:  cobra.ExactArgs(2),
 		RunE:  triggerWebhookRotateKey,
@@ -106,8 +106,8 @@ func triggerList(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("missing context")
 	}
 
-	workflowID := args[0]
-	result, err := ctx.Client.ListTriggers(workflowID, triggerListPage, triggerListPageSize, triggerListSortBy, triggerListSortOrder)
+	workflowKey := args[0]
+	result, err := ctx.Client.ListTriggersByWorkflowKey(workflowKey, triggerListPage, triggerListPageSize, triggerListSortBy, triggerListSortOrder)
 	if err != nil {
 		return err
 	}
@@ -118,16 +118,16 @@ func triggerList(cmd *cobra.Command, args []string) error {
 
 	if ctx.Quiet {
 		for _, item := range result.Items {
-			fmt.Fprintln(os.Stdout, item.ID)
+			fmt.Fprintln(os.Stdout, item.Key)
 		}
 		return nil
 	}
 
 	rows := make([][]string, 0, len(result.Items))
 	for _, item := range result.Items {
-		rows = append(rows, []string{item.ID, item.Type, triggerNameValue(item.Name), output.BoolLabel(item.IsActive)})
+		rows = append(rows, []string{item.Key, item.Type, triggerNameValue(item.Name), output.BoolLabel(item.IsActive)})
 	}
-	if err := output.PrintListTable([]string{"ID", "TYPE", "NAME", "ACTIVE"}, rows); err != nil {
+	if err := output.PrintListTable([]string{"KEY", "TYPE", "NAME", "ACTIVE"}, rows); err != nil {
 		return err
 	}
 	return output.PrintPagination(result.Pagination)
@@ -139,9 +139,9 @@ func triggerGet(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("missing context")
 	}
 
-	workflowID := args[0]
-	triggerID := args[1]
-	result, err := ctx.Client.GetTrigger(workflowID, triggerID)
+	workflowKey := args[0]
+	triggerKey := args[1]
+	result, err := ctx.Client.GetTriggerByKey(workflowKey, triggerKey)
 	if err != nil {
 		return err
 	}
@@ -155,7 +155,7 @@ func triggerCreate(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("missing context")
 	}
 
-	workflowID := args[0]
+	workflowKey := args[0]
 	configValue, err := readOptionalJSONFile(triggerCreateConfig)
 	if err != nil {
 		return err
@@ -168,7 +168,7 @@ func triggerCreate(cmd *cobra.Command, args []string) error {
 		"config":   configValue,
 	}
 
-	result, err := ctx.Client.CreateTrigger(workflowID, payload)
+	result, err := ctx.Client.CreateTriggerByWorkflowKey(workflowKey, payload)
 	if err != nil {
 		return err
 	}
@@ -182,8 +182,8 @@ func triggerUpdate(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("missing context")
 	}
 
-	workflowID := args[0]
-	triggerID := args[1]
+	workflowKey := args[0]
+	triggerKey := args[1]
 
 	patch := map[string]any{}
 	if triggerUpdateName != "" {
@@ -203,7 +203,7 @@ func triggerUpdate(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("no fields to update")
 	}
 
-	result, err := ctx.Client.UpdateTrigger(workflowID, triggerID, patch)
+	result, err := ctx.Client.UpdateTriggerByKey(workflowKey, triggerKey, patch)
 	if err != nil {
 		return err
 	}
@@ -217,9 +217,9 @@ func triggerDelete(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("missing context")
 	}
 
-	workflowID := args[0]
-	triggerID := args[1]
-	result, err := ctx.Client.DeleteTrigger(workflowID, triggerID)
+	workflowKey := args[0]
+	triggerKey := args[1]
+	result, err := ctx.Client.DeleteTriggerByKey(workflowKey, triggerKey)
 	if err != nil {
 		return err
 	}
@@ -233,18 +233,18 @@ func triggerWebhookRotateKey(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("missing context")
 	}
 
-	workflowID := args[0]
-	triggerID := args[1]
+	workflowKey := args[0]
+	triggerKey := args[1]
 
-	result, err := ctx.Client.RotateTriggerWebhookKey(workflowID, triggerID)
+	result, err := ctx.Client.RotateTriggerWebhookKeyByKey(workflowKey, triggerKey)
 	if err != nil {
 		return err
 	}
 
 	webhookURL, err := buildWebhookURL(
 		ctx.Client.BaseURL,
-		workflowID,
-		triggerID,
+		workflowKey,
+		triggerKey,
 		result.WebhookKey,
 		triggerWebhookPublicBase,
 	)
@@ -254,10 +254,10 @@ func triggerWebhookRotateKey(cmd *cobra.Command, args []string) error {
 
 	if IsJSON(ctx) {
 		return output.PrintJSON(map[string]string{
-			"workflowId": workflowID,
-			"triggerId":  triggerID,
-			"webhookKey": result.WebhookKey,
-			"webhookUrl": webhookURL,
+			"workflowKey": workflowKey,
+			"triggerKey":  triggerKey,
+			"webhookKey":  result.WebhookKey,
+			"webhookUrl":  webhookURL,
 		})
 	}
 
@@ -267,8 +267,8 @@ func triggerWebhookRotateKey(cmd *cobra.Command, args []string) error {
 	}
 
 	return output.PrintKVTable([][2]string{
-		{"workflowId", workflowID},
-		{"triggerId", triggerID},
+		{"workflowKey", workflowKey},
+		{"triggerKey", triggerKey},
 		{"webhookKey", result.WebhookKey},
 		{"webhookUrl", webhookURL},
 	})
@@ -279,7 +279,7 @@ func printTrigger(ctx *Context, result api.Trigger) error {
 		return output.PrintJSON(result)
 	}
 	if ctx.Quiet {
-		fmt.Fprintln(os.Stdout, result.ID)
+		fmt.Fprintln(os.Stdout, result.Key)
 		return nil
 	}
 
@@ -290,6 +290,7 @@ func printTrigger(ctx *Context, result api.Trigger) error {
 	}
 
 	return output.PrintKVTable([][2]string{
+		{"key", result.Key},
 		{"id", result.ID},
 		{"workflowId", result.WorkflowID},
 		{"type", result.Type},
@@ -308,7 +309,7 @@ func triggerNameValue(name *string) string {
 	return *name
 }
 
-func buildWebhookURL(apiBase string, workflowID string, triggerID string, webhookKey string, publicBase string) (string, error) {
+func buildWebhookURL(apiBase string, workflowRef string, triggerRef string, webhookKey string, publicBase string) (string, error) {
 	apiBase = strings.TrimSpace(apiBase)
 	apiParsed, err := url.Parse(apiBase)
 	if err != nil {
@@ -340,8 +341,8 @@ func buildWebhookURL(apiBase string, workflowID string, triggerID string, webhoo
 	parsed.Path = fmt.Sprintf(
 		"%s/hooks/%s/%s/%s",
 		basePath,
-		url.PathEscape(workflowID),
-		url.PathEscape(triggerID),
+		url.PathEscape(workflowRef),
+		url.PathEscape(triggerRef),
 		url.PathEscape(webhookKey),
 	)
 	parsed.RawQuery = ""

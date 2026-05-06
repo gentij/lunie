@@ -15,6 +15,7 @@ export type WorkflowRepositoryMock = {
     ]
   >;
   findById: jest.Mock<Promise<Workflow | null>, [string]>;
+  findByKey: jest.Mock<Promise<Workflow | null>, [string]>;
   update: jest.Mock<
     Promise<Workflow>,
     [string, { name?: string; isActive?: boolean }]
@@ -37,6 +38,7 @@ export const createWorkflowRepositoryMock = (): WorkflowRepositoryMock => ({
     ]
   >(),
   findById: jest.fn<Promise<Workflow | null>, [string]>(),
+  findByKey: jest.fn<Promise<Workflow | null>, [string]>(),
   update: jest.fn<
     Promise<Workflow>,
     [string, { name?: string; isActive?: boolean }]

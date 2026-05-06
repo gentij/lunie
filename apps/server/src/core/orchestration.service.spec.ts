@@ -23,12 +23,13 @@ describe('OrchestrationService', () => {
       trigger: {
         findFirst: jest.fn().mockResolvedValue({ id: 'tr_manual' }),
         create: jest.fn(),
+        findMany: jest.fn().mockResolvedValue([]),
       },
       event: {
         create: jest.fn().mockResolvedValue({ id: 'ev_1' }),
       },
       workflowRun: {
-        create: jest.fn().mockResolvedValue({ id: 'wfr_1' }),
+        create: jest.fn().mockResolvedValue({ id: 'wfr_1', number: 1 }),
         update: jest.fn(),
       },
       workflowVersion: {
@@ -64,7 +65,7 @@ describe('OrchestrationService', () => {
       },
       workflow: {
         create: jest.fn(),
-        update: jest.fn(),
+        update: jest.fn().mockResolvedValue({ runSequence: 1 }),
       },
     };
 
@@ -96,6 +97,7 @@ describe('OrchestrationService', () => {
 
     expect(result).toEqual({
       workflowRunId: 'wfr_1',
+      workflowRunNumber: 1,
       stepRunIds: ['sr_1', 'sr_2'],
     });
 
@@ -117,6 +119,7 @@ describe('OrchestrationService', () => {
         data: {
           workflowId: string;
           workflowVersionId: string;
+          number?: number;
           triggerId?: string;
           eventId?: string;
           overrides?: unknown;
@@ -128,10 +131,16 @@ describe('OrchestrationService', () => {
       throw new Error('Expected workflowRun.create to be called');
     expect(workflowRunCreateArgs.data.workflowId).toBe('wf_1');
     expect(workflowRunCreateArgs.data.workflowVersionId).toBe('wfv_1');
+    expect(workflowRunCreateArgs.data.number).toBe(1);
     expect(workflowRunCreateArgs.data.triggerId).toBe('tr_manual');
     expect(workflowRunCreateArgs.data.eventId).toBe('ev_1');
     expect(workflowRunCreateArgs.data.overrides).toEqual({
       step_1: { body: { content: 'dynamic' } },
+    });
+    expect(tx.workflow.update).toHaveBeenCalledWith({
+      where: { id: 'wf_1' },
+      data: { runSequence: { increment: 1 } },
+      select: { runSequence: true },
     });
 
     expect(tx.stepRun?.create).toHaveBeenCalledTimes(2);
@@ -190,12 +199,13 @@ describe('OrchestrationService', () => {
       trigger: {
         findFirst: jest.fn().mockResolvedValue({ id: 'tr_manual' }),
         create: jest.fn(),
+        findMany: jest.fn().mockResolvedValue([]),
       },
       event: {
         create: jest.fn().mockResolvedValue({ id: 'ev_1' }),
       },
       workflowRun: {
-        create: jest.fn().mockResolvedValue({ id: 'wfr_1' }),
+        create: jest.fn().mockResolvedValue({ id: 'wfr_1', number: 1 }),
         update: jest.fn(),
       },
       workflowVersion: {
@@ -228,7 +238,7 @@ describe('OrchestrationService', () => {
       },
       workflow: {
         create: jest.fn(),
-        update: jest.fn(),
+        update: jest.fn().mockResolvedValue({ runSequence: 1 }),
       },
     };
 
@@ -272,12 +282,13 @@ describe('OrchestrationService', () => {
       trigger: {
         findFirst: jest.fn().mockResolvedValue({ id: 'tr_manual' }),
         create: jest.fn(),
+        findMany: jest.fn().mockResolvedValue([]),
       },
       event: {
         create: jest.fn().mockResolvedValue({ id: 'ev_1' }),
       },
       workflowRun: {
-        create: jest.fn().mockResolvedValue({ id: 'wfr_1' }),
+        create: jest.fn().mockResolvedValue({ id: 'wfr_1', number: 1 }),
         update: jest.fn().mockResolvedValue({ id: 'wfr_1' }),
       },
       workflowVersion: {
@@ -295,7 +306,7 @@ describe('OrchestrationService', () => {
       },
       workflow: {
         create: jest.fn(),
-        update: jest.fn(),
+        update: jest.fn().mockResolvedValue({ runSequence: 1 }),
       },
     };
 
@@ -350,12 +361,13 @@ describe('OrchestrationService', () => {
       trigger: {
         findFirst: jest.fn().mockResolvedValue({ id: 'tr_manual' }),
         create: jest.fn(),
+        findMany: jest.fn().mockResolvedValue([]),
       },
       event: {
         create: jest.fn().mockResolvedValue({ id: 'ev_1' }),
       },
       workflowRun: {
-        create: jest.fn().mockResolvedValue({ id: 'wfr_1' }),
+        create: jest.fn().mockResolvedValue({ id: 'wfr_1', number: 1 }),
         update: jest.fn().mockResolvedValue({ id: 'wfr_1' }),
       },
       workflowVersion: {
@@ -367,7 +379,7 @@ describe('OrchestrationService', () => {
       },
       workflow: {
         create: jest.fn(),
-        update: jest.fn(),
+        update: jest.fn().mockResolvedValue({ runSequence: 1 }),
       },
     };
 
@@ -393,7 +405,11 @@ describe('OrchestrationService', () => {
       eventType: 'MANUAL',
     });
 
-    expect(result).toEqual({ workflowRunId: 'wfr_1', stepRunIds: [] });
+    expect(result).toEqual({
+      workflowRunId: 'wfr_1',
+      workflowRunNumber: 1,
+      stepRunIds: [],
+    });
     expect(enqueueStepRun).not.toHaveBeenCalled();
     const workflowRunUpdate = tx.workflowRun?.update as jest.MockedFunction<
       (args: { where: { id: string }; data: { status?: string } }) => unknown
@@ -415,12 +431,13 @@ describe('OrchestrationService', () => {
       trigger: {
         findFirst: jest.fn().mockResolvedValue({ id: 'tr_manual' }),
         create: jest.fn(),
+        findMany: jest.fn().mockResolvedValue([]),
       },
       event: {
         create: jest.fn().mockResolvedValue({ id: 'ev_1' }),
       },
       workflowRun: {
-        create: jest.fn().mockResolvedValue({ id: 'wfr_1' }),
+        create: jest.fn().mockResolvedValue({ id: 'wfr_1', number: 1 }),
         update: jest.fn(),
       },
       workflowVersion: {
@@ -443,7 +460,7 @@ describe('OrchestrationService', () => {
       },
       workflow: {
         create: jest.fn(),
-        update: jest.fn(),
+        update: jest.fn().mockResolvedValue({ runSequence: 1 }),
       },
     };
 
@@ -512,5 +529,75 @@ describe('OrchestrationService', () => {
       throw new Error('Expected workflowRun.update to be called');
     expect(workflowRunUpdateArgs.where.id).toBe('wfr_1');
     expect(workflowRunUpdateArgs.data.status).toBe('FAILED');
+  });
+
+  it('creates a keyed manual trigger when no manual trigger exists', async () => {
+    const enqueueStepRun = jest.fn();
+
+    const tx: PrismaTxMock = {
+      trigger: {
+        findFirst: jest.fn().mockResolvedValue(null),
+        findMany: jest.fn().mockResolvedValue([
+          {
+            key: 'webhook-trigger',
+            name: 'Webhook Trigger',
+            type: 'WEBHOOK',
+          },
+        ]),
+        create: jest.fn().mockResolvedValue({ id: 'tr_manual_created' }),
+      },
+      event: {
+        create: jest.fn().mockResolvedValue({ id: 'ev_1' }),
+      },
+      workflowRun: {
+        create: jest.fn().mockResolvedValue({ id: 'wfr_1', number: 1 }),
+        update: jest.fn().mockResolvedValue({ id: 'wfr_1' }),
+      },
+      workflowVersion: {
+        create: jest.fn(),
+        findFirst: jest.fn(),
+        findUniqueOrThrow: jest
+          .fn()
+          .mockResolvedValue({ definition: { steps: [] } }),
+      },
+      workflow: {
+        create: jest.fn(),
+        update: jest.fn().mockResolvedValue({ runSequence: 1 }),
+      },
+    };
+
+    const prismaMock: PrismaServiceMock = createPrismaServiceMock();
+    prismaMock.$transaction.mockImplementation((cb) => Promise.resolve(cb(tx)));
+
+    const moduleRef = await Test.createTestingModule({
+      providers: [
+        OrchestrationService,
+        {
+          provide: PrismaService,
+          useValue: prismaMock as unknown as PrismaService,
+        },
+        { provide: StepRunQueueService, useValue: { enqueueStepRun } },
+      ],
+    }).compile();
+
+    service = moduleRef.get(OrchestrationService);
+
+    await service.startWorkflow({
+      workflowId: 'wf_1',
+      workflowVersionId: 'wfv_1',
+      eventType: 'MANUAL',
+    });
+
+    expect(tx.trigger.create).toHaveBeenCalledWith({
+      data: {
+        workflowId: 'wf_1',
+        key: 'manual',
+        type: 'MANUAL',
+        name: 'Manual',
+        isActive: true,
+        config: {},
+      },
+      select: { id: true },
+    });
   });
 });

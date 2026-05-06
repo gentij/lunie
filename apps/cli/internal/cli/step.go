@@ -20,7 +20,7 @@ var stepListSortOrder string
 
 func init() {
 	listCmd := &cobra.Command{
-		Use:   "list <workflow-id> <run-id>",
+		Use:   "list <workflow-key> <run-number>",
 		Short: "List step runs",
 		Args:  cobra.ExactArgs(2),
 		RunE:  stepList,
@@ -31,7 +31,7 @@ func init() {
 	listCmd.Flags().StringVar(&stepListSortOrder, "sort-order", "asc", "Sort order (asc|desc)")
 
 	getCmd := &cobra.Command{
-		Use:   "get <workflow-id> <run-id> <step-run-id>",
+		Use:   "get <workflow-key> <run-number> <step-key>",
 		Short: "Get a step run",
 		Args:  cobra.ExactArgs(3),
 		RunE:  stepGet,
@@ -47,9 +47,13 @@ func stepList(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("missing context")
 	}
 
-	workflowID := args[0]
-	runID := args[1]
-	result, err := ctx.Client.ListStepRuns(workflowID, runID, stepListPage, stepListPageSize, stepListSortBy, stepListSortOrder)
+	workflowKey := args[0]
+	runNumber, err := parsePositiveIntArg("run number", args[1])
+	if err != nil {
+		return err
+	}
+
+	result, err := ctx.Client.ListStepRunsByWorkflowKeyAndRunNumber(workflowKey, runNumber, stepListPage, stepListPageSize, stepListSortBy, stepListSortOrder)
 	if err != nil {
 		return err
 	}
@@ -60,7 +64,7 @@ func stepList(cmd *cobra.Command, args []string) error {
 
 	if ctx.Quiet {
 		for _, item := range result.Items {
-			fmt.Fprintln(os.Stdout, item.ID)
+			fmt.Fprintln(os.Stdout, item.StepKey)
 		}
 		return nil
 	}
@@ -71,9 +75,9 @@ func stepList(cmd *cobra.Command, args []string) error {
 		if item.StartedAt != nil {
 			started = *item.StartedAt
 		}
-		rows = append(rows, []string{item.ID, item.StepKey, item.Status, started})
+		rows = append(rows, []string{item.StepKey, item.Status, started})
 	}
-	if err := output.PrintListTable([]string{"ID", "STEP_KEY", "STATUS", "STARTED"}, rows); err != nil {
+	if err := output.PrintListTable([]string{"STEP_KEY", "STATUS", "STARTED"}, rows); err != nil {
 		return err
 	}
 	return output.PrintPagination(result.Pagination)
@@ -85,10 +89,14 @@ func stepGet(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("missing context")
 	}
 
-	workflowID := args[0]
-	runID := args[1]
-	stepID := args[2]
-	result, err := ctx.Client.GetStepRun(workflowID, runID, stepID)
+	workflowKey := args[0]
+	runNumber, err := parsePositiveIntArg("run number", args[1])
+	if err != nil {
+		return err
+	}
+
+	stepKey := args[2]
+	result, err := ctx.Client.GetStepRunByStepKey(workflowKey, runNumber, stepKey)
 	if err != nil {
 		return err
 	}
@@ -97,7 +105,7 @@ func stepGet(cmd *cobra.Command, args []string) error {
 		return output.PrintJSON(result)
 	}
 	if ctx.Quiet {
-		fmt.Fprintln(os.Stdout, result.ID)
+		fmt.Fprintln(os.Stdout, result.StepKey)
 		return nil
 	}
 
@@ -111,9 +119,9 @@ func stepGet(cmd *cobra.Command, args []string) error {
 	}
 
 	return output.PrintKVTable([][2]string{
-		{"id", result.ID},
 		{"workflowRunId", result.WorkflowRunID},
 		{"stepKey", result.StepKey},
+		{"id", result.ID},
 		{"status", output.ColorStatus(result.Status)},
 		{"startedAt", started},
 		{"finishedAt", finished},

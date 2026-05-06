@@ -26,7 +26,7 @@ func (m *Model) toggleWorkflowActiveCmd() tea.Cmd {
 		if client == nil {
 			return mutationResultMsg{err: fmt.Errorf("api client unavailable")}
 		}
-		_, err := client.UpdateWorkflow(selected, map[string]any{"isActive": next})
+		_, err := client.UpdateWorkflowByKey(wf.Key, map[string]any{"isActive": next})
 		if err != nil {
 			return mutationResultMsg{err: err}
 		}
@@ -49,19 +49,23 @@ func (m *Model) queueRunForSelectedWorkflowCmd() tea.Cmd {
 	if selected == "" {
 		return m.pushToast(ToastWarn, "Select a workflow first")
 	}
+	wf, ok := workflowByID(&m.store, selected)
+	if !ok {
+		return m.pushToast(ToastWarn, "Select a workflow first")
+	}
 	client := m.client
 	m.mutationPending = true
 	return func() tea.Msg {
 		if client == nil {
 			return mutationResultMsg{err: fmt.Errorf("api client unavailable")}
 		}
-		result, err := client.RunWorkflow(selected, map[string]any{}, map[string]any{})
+		result, err := client.RunWorkflowByKey(wf.Key, map[string]any{}, map[string]any{})
 		if err != nil {
 			return mutationResultMsg{err: err}
 		}
 		message := "Workflow run queued"
-		if id, ok := result["workflowRunId"]; ok && strings.TrimSpace(id) != "" {
-			message = "Workflow run queued: " + id
+		if result.WorkflowRunNumber > 0 {
+			message = fmt.Sprintf("Workflow run queued: #%d", result.WorkflowRunNumber)
 		}
 		return mutationResultMsg{successMessage: message, refresh: true}
 	}
@@ -89,7 +93,7 @@ func (m *Model) toggleTriggerActiveCmd() tea.Cmd {
 		if client == nil {
 			return mutationResultMsg{err: fmt.Errorf("api client unavailable")}
 		}
-		_, err := client.UpdateTrigger(trg.WorkflowID, trg.ID, map[string]any{"isActive": next})
+		_, err := client.UpdateTriggerByKey(workflowKey(&m.store, trg.WorkflowID), trg.Key, map[string]any{"isActive": next})
 		if err != nil {
 			return mutationResultMsg{err: err}
 		}
@@ -115,7 +119,11 @@ func (m *Model) deleteWorkflowCmd(workflowID string) tea.Cmd {
 		if client == nil {
 			return mutationResultMsg{err: fmt.Errorf("api client unavailable")}
 		}
-		_, err := client.DeleteWorkflow(workflowID)
+		workflow, ok := workflowByID(&m.store, workflowID)
+		if !ok {
+			return mutationResultMsg{err: fmt.Errorf("workflow not found")}
+		}
+		_, err := client.DeleteWorkflowByKey(workflow.Key)
 		if err != nil {
 			return mutationResultMsg{err: err}
 		}
@@ -138,7 +146,11 @@ func (m *Model) deleteTriggerCmd(workflowID string, triggerID string) tea.Cmd {
 		if client == nil {
 			return mutationResultMsg{err: fmt.Errorf("api client unavailable")}
 		}
-		_, err := client.DeleteTrigger(workflowID, triggerID)
+		trigger, ok := triggerByID(&m.store, triggerID)
+		if !ok {
+			return mutationResultMsg{err: fmt.Errorf("trigger not found")}
+		}
+		_, err := client.DeleteTriggerByKey(workflowKey(&m.store, workflowID), trigger.Key)
 		if err != nil {
 			return mutationResultMsg{err: err}
 		}
@@ -259,7 +271,11 @@ func (m *Model) renameWorkflowCmd(workflowID string, name string) tea.Cmd {
 		if client == nil {
 			return mutationResultMsg{err: fmt.Errorf("api client unavailable")}
 		}
-		_, err := client.UpdateWorkflow(workflowID, map[string]any{"name": name})
+		workflow, ok := workflowByID(&m.store, workflowID)
+		if !ok {
+			return mutationResultMsg{err: fmt.Errorf("workflow not found")}
+		}
+		_, err := client.UpdateWorkflowByKey(workflow.Key, map[string]any{"name": name})
 		if err != nil {
 			return mutationResultMsg{err: err}
 		}
@@ -315,7 +331,7 @@ func (m *Model) updateTriggerCmd(workflowID string, triggerID string, name strin
 		if client == nil {
 			return mutationResultMsg{err: fmt.Errorf("api client unavailable")}
 		}
-		_, err := client.UpdateTrigger(workflowID, triggerID, patch)
+		_, err := client.UpdateTriggerByKey(workflowKey(&m.store, workflowID), trigger.Key, patch)
 		if err != nil {
 			return mutationResultMsg{err: err}
 		}
@@ -351,7 +367,7 @@ func (m *Model) createTriggerCmd(workflowID string, triggerType string, name str
 			"isActive": active,
 			"config":   configValue,
 		}
-		_, err := client.CreateTrigger(workflowID, payload)
+		_, err := client.CreateTriggerByWorkflowKey(workflowKey(&m.store, workflowID), payload)
 		if err != nil {
 			return mutationResultMsg{err: err}
 		}

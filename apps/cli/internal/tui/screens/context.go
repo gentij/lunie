@@ -70,7 +70,7 @@ func contextJSONContent(view ViewID, store *data.Store, selectedID string) strin
 		def := latestDefinition(versions)
 		return strings.Join([]string{
 			"Workflow",
-			utils.Indent(utils.PrettyJSON(fmt.Sprintf(`{"id":"%s","name":"%s","active":%t,"latestVersion":%d}`, wf.ID, wf.Name, wf.Active, wf.LatestVersion)), "  "),
+			utils.Indent(utils.PrettyJSON(fmt.Sprintf(`{"id":"%s","key":"%s","name":"%s","active":%t,"latestVersion":%d}`, wf.ID, wf.Key, wf.Name, wf.Active, wf.LatestVersion)), "  "),
 			"",
 			"Latest Definition",
 			utils.Indent(utils.PrettyJSON(def), "  "),
@@ -195,6 +195,7 @@ func workflowContext(store *data.Store, workflowID string) string {
 	}
 	lines := []string{
 		"Workflow: " + wf.Name,
+		"Key: " + wf.Key,
 		"Active: " + strings.ToLower(activeLabel(wf.Active)),
 		"Latest version: " + latest,
 		"Triggers: " + fmt.Sprintf("%d", len(triggers)),
@@ -207,7 +208,7 @@ func workflowContext(store *data.Store, workflowID string) string {
 	}
 	lines = append(lines, "", "Triggers:")
 	for _, t := range triggers {
-		lines = append(lines, fmt.Sprintf("- %s (%s)", t.Name, t.Type))
+		lines = append(lines, fmt.Sprintf("- %s [%s] (%s)", t.Name, t.Key, t.Type))
 	}
 	lines = append(lines, "", "Latest definition:")
 	lines = append(lines, utils.Indent(utils.PrettyJSON(latestDefinition(versions)), "  "))
@@ -221,9 +222,10 @@ func runContext(store *data.Store, runID string) string {
 	}
 	steps := stepsForRun(store, runID)
 	lines := []string{
-		"Run: " + run.ID,
+		fmt.Sprintf("Run: #%d", run.Number),
 		"Status: " + run.Status,
 		"Workflow: " + workflowName(store, run.WorkflowID),
+		"Workflow key: " + workflowKey(store, run.WorkflowID),
 		"",
 		"Input:",
 		utils.Indent(utils.PrettyJSON(run.InputJSON), "  "),
@@ -250,10 +252,11 @@ func triggerContext(store *data.Store, triggerID string) string {
 	lastRun := lastRunForWorkflow(store, trg.WorkflowID)
 	lastRunID := "-"
 	if lastRun != nil {
-		lastRunID = lastRun.ID
+		lastRunID = runLabel(store, lastRun.ID)
 	}
 	lines := []string{
 		"Trigger: " + trg.Name,
+		"Key: " + trg.Key,
 		"Type: " + trg.Type,
 		"Active: " + strings.ToLower(activeLabel(trg.Active)),
 		"Related events: " + fmt.Sprintf("%d", len(relatedEvents)),
@@ -272,11 +275,11 @@ func eventContext(store *data.Store, eventID string) string {
 	}
 	linked := "-"
 	if evt.RunID != nil {
-		linked = *evt.RunID
+		linked = runLabel(store, *evt.RunID)
 	}
 	lines := []string{
 		"Event: " + evt.ID,
-		"Trigger: " + evt.TriggerID,
+		"Trigger: " + triggerKey(store, evt.TriggerID),
 		"Linked run: " + linked,
 		"",
 		"Payload:",

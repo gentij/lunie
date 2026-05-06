@@ -8,6 +8,7 @@ import {
 
 export const WorkflowResSchema = z.object({
   id: z.string(),
+  key: z.string(),
   name: z.string(),
   isActive: z.boolean(),
   latestVersionId: z.string().nullable(),
@@ -44,6 +45,7 @@ export class UpdateWorkflowReqDto extends createZodDto(
 
 export const RunWorkflowResSchema = z.object({
   workflowRunId: z.string(),
+  workflowRunNumber: z.number().int(),
   status: z.string(),
 });
 export class RunWorkflowResDto extends createZodDto(RunWorkflowResSchema) {}

@@ -260,9 +260,9 @@ Mutation commands:
 
 Destructive confirmation semantics:
 
-- Workflow archive: phrase `ARCHIVE <workflow-id>`
-- Trigger archive: phrase `ARCHIVE <trigger-id>`
-- Secret delete: phrase `DELETE <secret-id>`
+- Workflow archive: phrase `ARCHIVE <workflow-key>`
+- Trigger archive: phrase `ARCHIVE <trigger-key>`
+- Secret delete: phrase `DELETE <secret-name>`
 
 Archive behavior:
 

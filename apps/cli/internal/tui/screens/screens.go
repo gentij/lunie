@@ -15,7 +15,7 @@ func BuildRowsForView(view ViewID, store *data.Store, styleSet styles.StyleSet, 
 	switch view {
 	case ViewDashboard:
 		columns := []table.Column{
-			{Title: "Run ID", Width: 12},
+			{Title: "Run", Width: 8},
 			{Title: "Workflow", Width: 20},
 			{Title: "Status", Width: 12},
 			{Title: "Started", Width: 12},
@@ -24,6 +24,7 @@ func BuildRowsForView(view ViewID, store *data.Store, styleSet styles.StyleSet, 
 		return fitColumns(columns, width), rows, ids
 	case ViewWorkflows:
 		columns := []table.Column{
+			{Title: "Key", Width: 18},
 			{Title: "Name", Width: 20},
 			{Title: "Active", Width: 10},
 			{Title: "Latest Version", Width: 16},
@@ -35,7 +36,7 @@ func BuildRowsForView(view ViewID, store *data.Store, styleSet styles.StyleSet, 
 		return fitColumns(columns, width), rows, ids
 	case ViewRuns:
 		columns := []table.Column{
-			{Title: "Run ID", Width: 12},
+			{Title: "Run", Width: 8},
 			{Title: "Workflow", Width: 20},
 			{Title: "Status", Width: 12},
 			{Title: "Trigger", Width: 10},
@@ -46,6 +47,7 @@ func BuildRowsForView(view ViewID, store *data.Store, styleSet styles.StyleSet, 
 		return fitColumns(columns, width), rows, ids
 	case ViewTriggers:
 		columns := []table.Column{
+			{Title: "Key", Width: 18},
 			{Title: "Name", Width: 18},
 			{Title: "Type", Width: 10},
 			{Title: "Workflow", Width: 18},
@@ -135,8 +137,8 @@ func sortLess(view ViewID, store *data.Store, aID string, bID string, title stri
 				return workflowName(store, ar.WorkflowID) < workflowName(store, br.WorkflowID)
 			case "Trigger":
 				return ar.TriggerType < br.TriggerType
-			case "Run ID":
-				return ar.ID < br.ID
+			case "Run":
+				return ar.Number < br.Number
 			}
 		}
 	case ViewWorkflows:
@@ -144,6 +146,8 @@ func sortLess(view ViewID, store *data.Store, aID string, bID string, title stri
 		bw, bok := workflowByID(store, bID)
 		if aok && bok {
 			switch title {
+			case "Key":
+				return aw.Key < bw.Key
 			case "Name":
 				return aw.Name < bw.Name
 			case "Active":
@@ -161,6 +165,8 @@ func sortLess(view ViewID, store *data.Store, aID string, bID string, title stri
 		bt, bok := triggerByID(store, bID)
 		if aok && bok {
 			switch title {
+			case "Key":
+				return at.Key < bt.Key
 			case "Name":
 				return at.Name < bt.Name
 			case "Type":
@@ -181,19 +187,19 @@ func sortLess(view ViewID, store *data.Store, aID string, bID string, title stri
 			case "Event ID":
 				return ae.ID < be.ID
 			case "Trigger":
-				return ae.TriggerID < be.TriggerID
+				return triggerKey(store, ae.TriggerID) < triggerKey(store, be.TriggerID)
 			case "Type":
 				return ae.Type < be.Type
 			case "Received":
 				return ae.ReceivedAt.Before(be.ReceivedAt)
 			case "Linked Run":
-				ar := ""
-				br := ""
+				ar := "-"
+				br := "-"
 				if ae.RunID != nil {
-					ar = *ae.RunID
+					ar = runLabel(store, *ae.RunID)
 				}
 				if be.RunID != nil {
-					br = *be.RunID
+					br = runLabel(store, *be.RunID)
 				}
 				return ar < br
 			}

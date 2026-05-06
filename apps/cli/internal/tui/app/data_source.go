@@ -182,6 +182,7 @@ func loadStoreFromAPI(client *api.Client, sortOptions snapshotSortOptions) (data
 			store.Triggers = append(store.Triggers, data.Trigger{
 				ID:         trigger.ID,
 				WorkflowID: trigger.WorkflowID,
+				Key:        trigger.Key,
 				Type:       strings.ToLower(trigger.Type),
 				Name:       name,
 				Active:     trigger.IsActive,
@@ -207,6 +208,7 @@ func loadStoreFromAPI(client *api.Client, sortOptions snapshotSortOptions) (data
 			store.Runs = append(store.Runs, data.WorkflowRun{
 				ID:          run.ID,
 				WorkflowID:  run.WorkflowID,
+				Number:      run.Number,
 				Status:      run.Status,
 				TriggerType: triggerType,
 				StartedAt:   startedAt,
@@ -287,6 +289,7 @@ func loadStoreFromAPI(client *api.Client, sortOptions snapshotSortOptions) (data
 		}
 		store.Workflows = append(store.Workflows, data.Workflow{
 			ID:            wf.ID,
+			Key:           wf.Key,
 			Name:          wf.Name,
 			Active:        wf.IsActive,
 			LatestVersion: latestVersion,

@@ -11,10 +11,11 @@ import (
 func TestRecentRunRows_StatusColumnUsesStatusValue(t *testing.T) {
 	now := time.Now()
 	store := data.Store{
-		Workflows: []data.Workflow{{ID: "wf_1", Name: "My Workflow", Active: true}},
+		Workflows: []data.Workflow{{ID: "wf_1", Key: "my-workflow", Name: "My Workflow", Active: true}},
 		Runs: []data.WorkflowRun{{
 			ID:         "run_1",
 			WorkflowID: "wf_1",
+			Number:     1,
 			Status:     "FAILED",
 			StartedAt:  now.Add(-2 * time.Minute),
 		}},

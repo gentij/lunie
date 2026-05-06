@@ -92,7 +92,7 @@ describe('Workflow Run Input (integration e2e)', () => {
         create: jest.fn().mockResolvedValue({ id: 'ev_1' }),
       },
       workflowRun: {
-        create: jest.fn().mockResolvedValue({ id: 'wfr_1' }),
+        create: jest.fn().mockResolvedValue({ id: 'wfr_1', number: 1 }),
         update: jest.fn().mockResolvedValue({ id: 'wfr_1' }),
       },
       workflowVersion: {
@@ -109,7 +109,7 @@ describe('Workflow Run Input (integration e2e)', () => {
       },
       workflow: {
         create: jest.fn(),
-        update: jest.fn(),
+        update: jest.fn().mockResolvedValue({ runSequence: 1 }),
       },
     };
 

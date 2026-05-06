@@ -12,7 +12,10 @@ import {
 import { ZodSerializerInterceptor, ZodValidationPipe } from 'nestjs-zod';
 
 import { StepRunController } from 'src/step-run/step-run.controller';
+import { StepRunKeyController } from 'src/step-run/step-run-key.controller';
 import { StepRunService } from 'src/step-run/step-run.service';
+import { WorkflowRunService } from 'src/workflow-run/workflow-run.service';
+import { WorkflowService } from 'src/workflow/workflow.service';
 
 import { AllExceptionsFilter } from 'src/common/http/filters/all-exceptions.filter';
 import { ResponseInterceptor } from 'src/common/http/interceptors/response.interceptor';
@@ -31,23 +34,39 @@ import {
   type WorkflowRunRepositoryMock,
 } from 'test/workflow-run/workflow-run.repository.mock';
 import { createWorkflowRunFixture } from 'test/workflow-run/workflow-run.fixtures';
-import { StepRunRepository, WorkflowRunRepository } from '@lunie/db-access';
+import {
+  StepRunRepository,
+  WorkflowRepository,
+  WorkflowRunRepository,
+} from '@lunie/db-access';
+import {
+  createWorkflowRepositoryMock,
+  type WorkflowRepositoryMock,
+} from 'test/workflow/workflow.repository.mock';
+import { createWorkflowFixture } from 'test/workflow/workflow.fixtures';
 
 describe('StepRun (e2e)', () => {
   let app: NestFastifyApplication;
   let repo: StepRunRepositoryMock;
   let runRepo: WorkflowRunRepositoryMock;
+  let workflowRepo: WorkflowRepositoryMock;
+  let workflowService: { getByKey: jest.Mock };
 
   beforeEach(async () => {
     repo = createStepRunRepositoryMock();
     runRepo = createWorkflowRunRepositoryMock();
+    workflowRepo = createWorkflowRepositoryMock();
+    workflowService = { getByKey: jest.fn() };
 
     const moduleRef = await Test.createTestingModule({
-      controllers: [StepRunController],
+      controllers: [StepRunController, StepRunKeyController],
       providers: [
         StepRunService,
+        WorkflowRunService,
         { provide: StepRunRepository, useValue: repo },
         { provide: WorkflowRunRepository, useValue: runRepo },
+        { provide: WorkflowRepository, useValue: workflowRepo },
+        { provide: WorkflowService, useValue: workflowService },
 
         { provide: APP_PIPE, useClass: ZodValidationPipe },
         { provide: APP_INTERCEPTOR, useClass: ZodSerializerInterceptor },
@@ -108,6 +127,37 @@ describe('StepRun (e2e)', () => {
     const body = res.json();
     expect(body.ok).toBe(true);
     expect(body.data.id).toBe('sr_1');
+  });
+
+  it('GET /workflows/by-key/:workflowKey/runs/:runNumber/steps/:stepKey -> 200 when found', async () => {
+    const workflow = createWorkflowFixture({ id: 'wf_1', key: 'deploy-api' });
+    const run = createWorkflowRunFixture({
+      id: 'wfr_1',
+      workflowId: 'wf_1',
+      number: 42,
+    });
+    const step = createStepRunFixture({
+      id: 'sr_1',
+      workflowRunId: 'wfr_1',
+      stepKey: 'fetch_post',
+    });
+
+    workflowService.getByKey.mockResolvedValue(workflow);
+    workflowRepo.findById.mockResolvedValue(workflow);
+    runRepo.findByWorkflowAndNumber.mockResolvedValue(run);
+    runRepo.findById.mockResolvedValue(run);
+    repo.findByWorkflowRunAndStepKey.mockResolvedValue(step);
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/workflows/by-key/deploy-api/runs/42/steps/fetch_post',
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.ok).toBe(true);
+    expect(body.data.id).toBe('sr_1');
+    expect(body.data.stepKey).toBe('fetch_post');
   });
 
   it('GET /workflows/:workflowId/runs/:runId/steps/:id -> 404 when missing', async () => {

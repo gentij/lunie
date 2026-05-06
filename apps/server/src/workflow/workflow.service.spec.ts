@@ -55,7 +55,12 @@ describe('WorkflowService', () => {
   });
 
   it('create() creates a workflow', async () => {
-    const wf = createWorkflowFixture({ name: 'My WF' });
+    const existing = createWorkflowFixture({
+      id: 'wf_existing',
+      key: 'existing-workflow',
+      name: 'Existing Workflow',
+    });
+    const wf = createWorkflowFixture({ name: 'My WF', key: 'my-wf' });
     const version = createWorkflowVersionFixture({
       workflowId: wf.id,
       version: 1,
@@ -72,6 +77,7 @@ describe('WorkflowService', () => {
     });
     const updated = createWorkflowFixture({
       id: wf.id,
+      key: 'my-wf',
       name: 'My WF',
       latestVersionId: version.id,
     });
@@ -99,6 +105,7 @@ describe('WorkflowService', () => {
       },
     };
 
+    repo.findMany.mockResolvedValue([existing]);
     prisma.$transaction.mockImplementation((cb) => Promise.resolve(cb(tx)));
 
     await expect(
@@ -110,7 +117,7 @@ describe('WorkflowService', () => {
 
     expect(prisma.$transaction).toHaveBeenCalledTimes(1);
     expect(tx.workflow.create).toHaveBeenCalledWith({
-      data: { name: 'My WF' },
+      data: { name: 'My WF', key: 'my-wf' },
     });
 
     const triggerCreate = tx.trigger?.create;
@@ -119,6 +126,7 @@ describe('WorkflowService', () => {
     expect(triggerCreate).toHaveBeenCalledWith({
       data: {
         workflowId: wf.id,
+        key: 'manual',
         type: 'MANUAL',
         name: 'Manual',
         isActive: true,
@@ -161,6 +169,16 @@ describe('WorkflowService', () => {
     repo.findById.mockResolvedValue(wf);
 
     await expect(service.get('wf_x')).resolves.toBe(wf);
+    expect(repo.findById).toHaveBeenCalledWith('wf_x');
+  });
+
+  it('getByKey() resolves workflow and reuses id lookup', async () => {
+    const wf = createWorkflowFixture({ id: 'wf_x', key: 'deploy-api' });
+    repo.findByKey.mockResolvedValue(wf);
+    repo.findById.mockResolvedValue(wf);
+
+    await expect(service.getByKey('deploy-api')).resolves.toBe(wf);
+    expect(repo.findByKey).toHaveBeenCalledWith('deploy-api');
     expect(repo.findById).toHaveBeenCalledWith('wf_x');
   });
 

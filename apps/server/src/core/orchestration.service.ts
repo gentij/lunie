@@ -5,6 +5,10 @@ import { StepRunJobPayload, WorkflowDefinition } from '@lunie/contracts';
 import type { JobsOptions } from 'bullmq';
 
 import { StepRunQueueService } from '../queue/step-run-queue.service';
+import {
+  buildUniqueKey,
+  deriveReservedKey,
+} from 'src/common/identifiers/key.util';
 
 interface StepDef {
   key: string;
@@ -45,7 +49,11 @@ export class OrchestrationService {
         body?: unknown;
       }
     >;
-  }): Promise<{ workflowRunId: string; stepRunIds: string[] }> {
+  }): Promise<{
+    workflowRunId: string;
+    workflowRunNumber: number;
+    stepRunIds: string[];
+  }> {
     const {
       workflowId,
       workflowVersionId,
@@ -61,7 +69,7 @@ export class OrchestrationService {
       `Starting workflow workflowId=${workflowId} workflowVersionId=${workflowVersionId} triggerId=${triggerId ?? '-'} eventType=${eventType ?? '-'}`,
     );
 
-    const { workflowRunId, stepRunIds, enqueueItems } =
+    const { workflowRunId, workflowRunNumber, stepRunIds, enqueueItems } =
       await this.prisma.$transaction(async (tx) => {
         const triggerIdToUse = await this.resolveTriggerIdForEvent(tx, {
           workflowId,
@@ -103,9 +111,16 @@ export class OrchestrationService {
           overrides,
         );
 
+        const workflowSequence = await tx.workflow.update({
+          where: { id: workflowId },
+          data: { runSequence: { increment: 1 } },
+          select: { runSequence: true },
+        });
+
         const workflowRunData: Prisma.WorkflowRunUncheckedCreateInput = {
           workflowId,
           workflowVersionId,
+          number: workflowSequence.runSequence,
           triggerId: triggerIdToUse,
           eventId: event.id,
           status: 'QUEUED',
@@ -127,6 +142,7 @@ export class OrchestrationService {
 
           return {
             workflowRunId: workflowRun.id,
+            workflowRunNumber: workflowRun.number,
             stepRunIds: [] as string[],
             enqueueItems: [] as EnqueueItem[],
           };
@@ -175,7 +191,12 @@ export class OrchestrationService {
           };
         });
 
-        return { workflowRunId: workflowRun.id, stepRunIds, enqueueItems };
+        return {
+          workflowRunId: workflowRun.id,
+          workflowRunNumber: workflowRun.number,
+          stepRunIds,
+          enqueueItems,
+        };
       });
 
     const jobIdMap = new Map<string, string>();
@@ -259,7 +280,7 @@ export class OrchestrationService {
       `Workflow started workflowRunId=${workflowRunId} steps=${stepRunIds.length}`,
     );
 
-    return { workflowRunId, stepRunIds };
+    return { workflowRunId, workflowRunNumber, stepRunIds };
   }
 
   private getExecutionBatches(steps: StepDef[]): string[][] {
@@ -354,9 +375,26 @@ export class OrchestrationService {
 
     if (manual) return manual.id;
 
+    const existingTriggers = await tx.trigger.findMany({
+      where: { workflowId: params.workflowId },
+      select: { key: true, name: true, type: true },
+    });
+    const manualTriggerKey = buildUniqueKey(
+      'Manual',
+      'manual',
+      existingTriggers.map((trigger) =>
+        deriveReservedKey({
+          key: trigger.key,
+          source: trigger.name ?? trigger.type,
+          fallback: trigger.type.toLowerCase(),
+        }),
+      ),
+    );
+
     const created = await tx.trigger.create({
       data: {
         workflowId: params.workflowId,
+        key: manualTriggerKey,
         type: 'MANUAL',
         name: 'Manual',
         isActive: true,

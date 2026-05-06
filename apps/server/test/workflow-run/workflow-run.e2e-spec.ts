@@ -12,7 +12,9 @@ import {
 import { ZodSerializerInterceptor, ZodValidationPipe } from 'nestjs-zod';
 
 import { WorkflowRunController } from 'src/workflow-run/workflow-run.controller';
+import { WorkflowRunKeyController } from 'src/workflow-run/workflow-run-key.controller';
 import { WorkflowRunService } from 'src/workflow-run/workflow-run.service';
+import { WorkflowService } from 'src/workflow/workflow.service';
 
 import { AllExceptionsFilter } from 'src/common/http/filters/all-exceptions.filter';
 import { ResponseInterceptor } from 'src/common/http/interceptors/response.interceptor';
@@ -37,17 +39,20 @@ describe('WorkflowRun (e2e)', () => {
   let app: NestFastifyApplication;
   let repo: WorkflowRunRepositoryMock;
   let workflowRepo: WorkflowRepositoryMock;
+  let workflowService: { getByKey: jest.Mock };
 
   beforeEach(async () => {
     repo = createWorkflowRunRepositoryMock();
     workflowRepo = createWorkflowRepositoryMock();
+    workflowService = { getByKey: jest.fn() };
 
     const moduleRef = await Test.createTestingModule({
-      controllers: [WorkflowRunController],
+      controllers: [WorkflowRunController, WorkflowRunKeyController],
       providers: [
         WorkflowRunService,
         { provide: WorkflowRunRepository, useValue: repo },
         { provide: WorkflowRepository, useValue: workflowRepo },
+        { provide: WorkflowService, useValue: workflowService },
 
         { provide: APP_PIPE, useClass: ZodValidationPipe },
         { provide: APP_INTERCEPTOR, useClass: ZodSerializerInterceptor },
@@ -93,7 +98,11 @@ describe('WorkflowRun (e2e)', () => {
 
   it('GET /workflows/:workflowId/runs/:id -> 200 when found', async () => {
     const wf = createWorkflowFixture({ id: 'wf_1' });
-    const run = createWorkflowRunFixture({ id: 'wfr_1', workflowId: 'wf_1' });
+    const run = createWorkflowRunFixture({
+      id: 'wfr_1',
+      workflowId: 'wf_1',
+      number: 42,
+    });
 
     workflowRepo.findById.mockResolvedValue(wf);
     repo.findById.mockResolvedValue(run);
@@ -108,6 +117,31 @@ describe('WorkflowRun (e2e)', () => {
     const body = res.json();
     expect(body.ok).toBe(true);
     expect(body.data.id).toBe('wfr_1');
+    expect(body.data.number).toBe(42);
+  });
+
+  it('GET /workflows/by-key/:workflowKey/runs/:runNumber -> 200 when found', async () => {
+    const workflow = createWorkflowFixture({ id: 'wf_1', key: 'deploy-api' });
+    const run = createWorkflowRunFixture({
+      id: 'wfr_1',
+      workflowId: 'wf_1',
+      number: 42,
+    });
+
+    workflowService.getByKey.mockResolvedValue(workflow);
+    workflowRepo.findById.mockResolvedValue(workflow);
+    repo.findByWorkflowAndNumber.mockResolvedValue(run);
+
+    const res = await app.inject({
+      method: 'GET',
+      url: '/workflows/by-key/deploy-api/runs/42',
+    });
+
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.ok).toBe(true);
+    expect(body.data.id).toBe('wfr_1');
+    expect(body.data.number).toBe(42);
   });
 
   it('GET /workflows/:workflowId/runs/:id -> 404 when missing', async () => {

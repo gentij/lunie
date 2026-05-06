@@ -16,9 +16,9 @@ func TestRefreshView_PreservesSelectionByRowID(t *testing.T) {
 	m.view = ViewWorkflows
 	m.store = data.Store{
 		Workflows: []data.Workflow{
-			{ID: "wf_a", Name: "A", Active: true, LatestVersion: 1, UpdatedAt: now.Add(-3 * time.Hour)},
-			{ID: "wf_b", Name: "B", Active: true, LatestVersion: 1, UpdatedAt: now.Add(-2 * time.Hour)},
-			{ID: "wf_c", Name: "C", Active: true, LatestVersion: 1, UpdatedAt: now.Add(-1 * time.Hour)},
+			{ID: "wf_a", Key: "a", Name: "A", Active: true, LatestVersion: 1, UpdatedAt: now.Add(-3 * time.Hour)},
+			{ID: "wf_b", Key: "b", Name: "B", Active: true, LatestVersion: 1, UpdatedAt: now.Add(-2 * time.Hour)},
+			{ID: "wf_c", Key: "c", Name: "C", Active: true, LatestVersion: 1, UpdatedAt: now.Add(-1 * time.Hour)},
 		},
 	}
 
@@ -56,7 +56,7 @@ func TestParseJSONObject_RequiresObject(t *testing.T) {
 
 func TestDeleteConfirmModal_RequiresExactPhrase(t *testing.T) {
 	m := NewModel(nil, "", false, config.Config{}, "")
-	m.openDeleteConfirmModal("Archive Workflow", "Archive test workflow", "ARCHIVE wf_test", "workflow", "wf_test", "", "")
+	m.openDeleteConfirmModal("Archive Workflow", "Archive test workflow", "ARCHIVE workflow-key", "workflow", "wf_test", "", "")
 
 	if got := m.actionModalValidationError(); got == "" {
 		t.Fatal("expected validation error when phrase is empty")
@@ -67,7 +67,7 @@ func TestDeleteConfirmModal_RequiresExactPhrase(t *testing.T) {
 		t.Fatal("expected validation error for mismatched phrase")
 	}
 
-	m.action.Confirm.SetValue("ARCHIVE wf_test")
+	m.action.Confirm.SetValue("ARCHIVE workflow-key")
 	if got := m.actionModalValidationError(); got != "" {
 		t.Fatalf("expected valid confirmation phrase, got error: %q", got)
 	}
@@ -75,8 +75,8 @@ func TestDeleteConfirmModal_RequiresExactPhrase(t *testing.T) {
 
 func TestSubmitDeleteConfirmDispatchesDeleteCmd(t *testing.T) {
 	m := NewModel(nil, "", false, config.Config{}, "")
-	m.openDeleteConfirmModal("Archive Trigger", "Archive test trigger", "ARCHIVE trg_test", "trigger", "wf_test", "trg_test", "")
-	m.action.Confirm.SetValue("ARCHIVE trg_test")
+	m.openDeleteConfirmModal("Archive Trigger", "Archive test trigger", "ARCHIVE trigger-key", "trigger", "wf_test", "trg_test", "")
+	m.action.Confirm.SetValue("ARCHIVE trigger-key")
 
 	cmd := m.submitActionModal()
 	if cmd == nil {
@@ -159,8 +159,8 @@ func TestScopeRowsForCurrentView_ActiveOnlyWorkflows(t *testing.T) {
 	m.view = ViewWorkflows
 	m.store = data.Store{
 		Workflows: []data.Workflow{
-			{ID: "wf_active", Name: "Active", Active: true, UpdatedAt: now},
-			{ID: "wf_inactive", Name: "Inactive", Active: false, UpdatedAt: now},
+			{ID: "wf_active", Key: "active", Name: "Active", Active: true, UpdatedAt: now},
+			{ID: "wf_inactive", Key: "inactive", Name: "Inactive", Active: false, UpdatedAt: now},
 		},
 	}
 	rows := []table.Row{{"Active"}, {"Inactive"}}

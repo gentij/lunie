@@ -19,7 +19,7 @@ func recentRunRows(store *data.Store, now time.Time, limit int) ([]table.Row, []
 			break
 		}
 		rows = append(rows, table.Row{
-			run.ID,
+			runLabel(store, run.ID),
 			workflowName(store, run.WorkflowID),
 			normalizeStatus(run.Status),
 			utils.RelativeTime(now, run.StartedAt),
@@ -34,6 +34,7 @@ func workflowRows(store *data.Store, now time.Time) ([]table.Row, []string) {
 	ids := []string{}
 	for _, wf := range store.Workflows {
 		rows = append(rows, table.Row{
+			wf.Key,
 			wf.Name,
 			activeLabel(wf.Active),
 			fmt.Sprintf("v%d", wf.LatestVersion),
@@ -51,7 +52,7 @@ func runRows(store *data.Store, now time.Time) ([]table.Row, []string) {
 	ids := []string{}
 	for _, run := range store.Runs {
 		rows = append(rows, table.Row{
-			run.ID,
+			runLabel(store, run.ID),
 			workflowName(store, run.WorkflowID),
 			normalizeStatus(run.Status),
 			run.TriggerType,
@@ -68,6 +69,7 @@ func triggerRows(store *data.Store, now time.Time) ([]table.Row, []string) {
 	ids := []string{}
 	for _, trg := range store.Triggers {
 		rows = append(rows, table.Row{
+			trg.Key,
 			trg.Name,
 			trg.Type,
 			workflowName(store, trg.WorkflowID),
@@ -89,10 +91,10 @@ func eventRows(store *data.Store, styleSet styles.StyleSet, now time.Time) ([]ta
 		}
 		rows = append(rows, table.Row{
 			evt.ID,
-			evt.TriggerID,
+			triggerKey(store, evt.TriggerID),
 			evt.Type,
 			utils.RelativeTime(now, evt.ReceivedAt),
-			linked,
+			runLabel(store, linked),
 		})
 		ids = append(ids, evt.ID)
 	}

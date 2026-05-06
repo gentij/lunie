@@ -38,7 +38,7 @@ describe('Trigger Webhook (integration e2e)', () => {
   let triggerRepo: TriggerRepositoryMock;
   let workflowRepo: WorkflowRepositoryMock;
   let orchestration: { startWorkflow: jest.Mock };
-  let workflowService: { get: jest.Mock };
+  let workflowService: { get: jest.Mock; getByKey: jest.Mock };
   let crypto: {
     generateApiToken: jest.Mock<string, []>;
     hashApiToken: jest.Mock<string, [string]>;
@@ -49,7 +49,7 @@ describe('Trigger Webhook (integration e2e)', () => {
     triggerRepo = createTriggerRepositoryMock();
     workflowRepo = createWorkflowRepositoryMock();
     orchestration = { startWorkflow: jest.fn() };
-    workflowService = { get: jest.fn() };
+    workflowService = { get: jest.fn(), getByKey: jest.fn() };
     crypto = {
       generateApiToken: jest
         .fn<string, []>()
@@ -105,6 +105,7 @@ describe('Trigger Webhook (integration e2e)', () => {
     );
     orchestration.startWorkflow.mockResolvedValue({
       workflowRunId: 'wfr_1',
+      workflowRunNumber: 5,
       stepRunIds: [],
     });
 
@@ -165,6 +166,7 @@ describe('Trigger Webhook (integration e2e)', () => {
     );
     orchestration.startWorkflow.mockResolvedValue({
       workflowRunId: 'wfr_1',
+      workflowRunNumber: 5,
       stepRunIds: [],
     });
 
@@ -195,10 +197,65 @@ describe('Trigger Webhook (integration e2e)', () => {
     );
   });
 
-  it('POST /hooks/:workflowId/:triggerId/:webhookKey rejects invalid key', async () => {
-    workflowRepo.findById.mockResolvedValue(
-      createWorkflowFixture({ id: 'wf_1', latestVersionId: 'wfv_1' }),
+  it('POST /hooks/:workflowKey/:triggerKey/:webhookKey accepts key-based public webhook payload', async () => {
+    const workflow = createWorkflowFixture({
+      id: 'wf_1',
+      key: 'deploy-api',
+      latestVersionId: 'wfv_1',
+    });
+    workflowRepo.findByKey.mockResolvedValue(workflow);
+    workflowRepo.findById.mockResolvedValue(workflow);
+    triggerRepo.findByWorkflowAndKey.mockResolvedValue(
+      createTriggerFixture({
+        id: 'tr_1',
+        workflowId: 'wf_1',
+        key: 'github-webhook',
+        type: 'WEBHOOK',
+        isActive: true,
+        config: {
+          webhookAuth: {
+            mode: 'path-key',
+            keyHash: 'hash:lunie_valid_key',
+          },
+        },
+      }),
     );
+    workflowService.getByKey.mockResolvedValue(workflow);
+    orchestration.startWorkflow.mockResolvedValue({
+      workflowRunId: 'wfr_2',
+      workflowRunNumber: 8,
+      stepRunIds: [],
+    });
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/hooks/deploy-api/github-webhook/lunie_valid_key',
+      payload: {
+        repository: 'lunie',
+        event: 'push',
+      },
+    });
+
+    expect(res.statusCode).toBe(201);
+    const body = res.json();
+    expect(body.ok).toBe(true);
+    expect(body.data.status).toBe('accepted');
+    expect(orchestration.startWorkflow).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workflowId: 'wf_1',
+        triggerId: 'tr_1',
+        eventType: 'WEBHOOK',
+      }),
+    );
+  });
+
+  it('POST /hooks/:workflowId/:triggerId/:webhookKey rejects invalid key', async () => {
+    const workflow = createWorkflowFixture({
+      id: 'wf_1',
+      latestVersionId: 'wfv_1',
+    });
+    workflowRepo.findById.mockResolvedValue(workflow);
+    workflowService.get.mockResolvedValue(workflow);
     triggerRepo.findById.mockResolvedValue(
       createTriggerFixture({
         id: 'tr_1',

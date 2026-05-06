@@ -47,12 +47,12 @@ JSON
 # 4) Create workflow and run it
 lunie workflow create --name "First Workflow" --definition /tmp/lunie-definition.json
 lunie workflow list
-# copy workflow ID from list output
-lunie workflow run <workflow-id>
+# use the generated workflow key from list output
+lunie workflow run first-workflow
 
 # 5) Inspect execution
-lunie run list <workflow-id>
-lunie step list <workflow-id> <run-id>
+lunie run list first-workflow
+lunie step list first-workflow 1
 ```
 
 ## What You Need
@@ -142,15 +142,15 @@ Create and run:
 ```bash
 lunie workflow create --name "First Workflow" --definition /tmp/lunie-definition.json
 lunie workflow list
-# use workflow id from list output
-lunie workflow run <workflow-id>
+# use the workflow key from list output
+lunie workflow run first-workflow
 ```
 
 Inspect run details:
 
 ```bash
-lunie run list <workflow-id>
-lunie step list <workflow-id> <run-id>
+lunie run list first-workflow
+lunie step list first-workflow 1
 ```
 
 ## Optional: Configure Public Webhook Ingress
@@ -158,13 +158,13 @@ lunie step list <workflow-id> <run-id>
 Create a webhook trigger and rotate a path key:
 
 ```bash
-lunie trigger create <workflow-id> --type WEBHOOK --name "Inbound"
-lunie trigger webhook rotate-key <workflow-id> <trigger-id>
+lunie trigger create first-workflow --type WEBHOOK --name "Inbound"
+lunie trigger webhook rotate-key first-workflow inbound
 ```
 
 This prints a URL in the format:
 
-- `http://<host>:3000/v1/api/hooks/:workflowId/:triggerId/:webhookKey`
+- `http://<host>:3000/v1/api/hooks/:workflowKey/:triggerKey/:webhookKey`
 
 Use that URL in your webhook provider. For reverse proxy starters, see:
 
